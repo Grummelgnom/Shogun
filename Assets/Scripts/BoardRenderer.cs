@@ -1,4 +1,4 @@
-﻿using UnityEngine;  // Unity-Funktionen (GameObject, Transform, Color, etc.)
+﻿using UnityEngine;  // Unity-Funktionen für GameObjects, Transform, Color, etc.
 
 // Dieses Script ist dafür zuständig, das Board aus dem GameManager
 // als sichtbare 2D-Kacheln in der Scene anzuzeigen.
@@ -39,22 +39,6 @@ public class BoardRenderer : MonoBehaviour
         // Wenn alles da ist, bauen wir das visuelle Board.
         CreateBoardVisuals();
     }
-    // Rechnet eine Board-Position (row, column) in eine Weltposition um,
-    // damit Figuren genau auf den Tiles sitzen.
-    public Vector3 GetWorldPosition(int row, int column)
-    {
-        int rows = gameManager.rows;
-        int columns = gameManager.columns;
-
-        float xOffset = -(columns - 1) * tileSpacing / 2f;
-        float yOffset = -(rows - 1) * tileSpacing / 2f - 0.1f;
-
-        float x = column * tileSpacing + xOffset;
-        float y = (rows - 1 - row) * tileSpacing + yOffset;
-
-        return new Vector3(x, y, 0f);
-    }
-
 
     // Erstellt für jedes Feld im Board eine sichtbare Kachel.
     void CreateBoardVisuals()
@@ -63,30 +47,34 @@ public class BoardRenderer : MonoBehaviour
         int rows = gameManager.rows;
         int columns = gameManager.columns;
 
-        // Wir berechnen einen Offset, damit das Board ungefähr um die Weltmitte (0,0) herum zentriert ist.
-        // Ohne das würde das Grid oben rechts wegdriften.
+        // Das Board ungefähr um die Weltmitte (0,0) zentrieren.
+        // Wir berechnen einen Offset, damit das Grid nicht oben-links anfängt,
+        // sondern in der Nähe des Ursprungs.
         float xOffset = -(columns - 1) * tileSpacing / 2f;
         float yOffset = -(rows - 1) * tileSpacing / 2f;
 
-        // Schleife über alle Reihen.
+        // Schleife über alle Reihen (von oben nach unten).
         for (int r = 0; r < rows; r++)
         {
-            // Schleife über alle Spalten.
+            // Schleife über alle Spalten (von links nach rechts).
             for (int c = 0; c < columns; c++)
             {
-                // Position der Kachel berechnen.
-                // Wir drehen hier die Reihenachse um (rows - 1 - r),
-                // damit die Darstellung mit dem Konsolen-Output besser zusammenpasst
-                // (Reihe 0 oben, Reihe rows-1 unten).
+                // Position dieser Kachel im Raum berechnen.
+                // Wichtig: Wir drehen hier die Reihenachse um (rows - 1 - r),
+                // damit Reihe 0 oben angezeigt wird, so wie im Konsolenbild.
                 float x = c * tileSpacing + xOffset;
                 float y = (rows - 1 - r) * tileSpacing + yOffset;
+
                 Vector3 tilePosition = new Vector3(x, y, 0f);
 
                 // Eine neue Kachel aus dem Prefab erzeugen.
                 GameObject tile = Instantiate(tilePrefab, tilePosition, Quaternion.identity);
+
+                // Kachel als Kind dieses BoardRenderers setzen,
+                // damit im Hierarchy-Fenster alles schön gruppiert ist.
                 tile.transform.parent = this.transform;
 
-                // Tile-Script auf der Kachel holen (muss am Prefab hängen)
+                // Das Tile-Script auf der Kachel konfigurieren.
                 Tile tileScript = tile.GetComponent<Tile>();
                 if (tileScript != null)
                 {
@@ -95,34 +83,42 @@ public class BoardRenderer : MonoBehaviour
                     tileScript.gameManager = gameManager;
                 }
 
-
-                // Die Kachel als Kind dieses BoardRenderers setzen,
-                // damit im Hierarchy-Fenster alles schön aufgeräumt ist.
-                tile.transform.parent = this.transform;
-
-                // Wert direkt aus dem Board holen
+                // Wert direkt aus dem Board an dieser Position [r, c] holen.
                 int value = gameManager.board[r, c];
 
-                // SpriteRenderer der Kachel holen
+                // SpriteRenderer suchen, um optional Farbe zu setzen.
                 SpriteRenderer sr = tile.GetComponent<SpriteRenderer>();
-
                 if (sr != null)
                 {
-                    // Test: Logge Position und Wert in die Konsole
-                    Debug.Log($"Tile ({r},{c}) hat Wert {value}");
-
-                    // Wenn Wert 4 → rot, sonst grau
+                    // Einfache Visualisierung:
+                    // Wert 4 → rot (starke Magneten), sonst grau (schwache/keine Magneten).
                     if (value == 4)
-                    {
                         sr.color = Color.red;
-                    }
                     else
-                    {
                         sr.color = Color.gray;
-                    }
                 }
-
+                else
+                {
+                    Debug.LogWarning("BoardRenderer: Tile-Prefab hat keinen SpriteRenderer!");
+                }
             }
         }
+    }
+
+    // Hilfsfunktion:
+    // Rechnet eine Board-Position (row, column) in eine Weltposition um.
+    // Diese Funktion wird vom GameManager benutzt, um Figuren an die richtige Stelle zu setzen.
+    public Vector3 GetWorldPosition(int row, int column)
+    {
+        int rows = gameManager.rows;
+        int columns = gameManager.columns;
+
+        float xOffset = -(columns - 1) * tileSpacing / 2f;
+        float yOffset = -(rows - 1) * tileSpacing / 2f;
+
+        float x = column * tileSpacing + xOffset;
+        float y = (rows - 1 - row) * tileSpacing + yOffset;
+
+        return new Vector3(x, y, 0f);
     }
 }
