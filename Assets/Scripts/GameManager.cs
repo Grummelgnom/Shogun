@@ -24,21 +24,46 @@ public class GameManager : MonoBehaviour
     }
 
     // Setzt aktuell alle Felder im Board auf 0.
+    // Setzt alle Felder im Board auf 0
+    // und verteilt anschließend genau 16 zufällige Felder mit dem Wert 4.
     void InitBoard()
     {
-        // Schleife über alle Reihen.
+        // 1. Schritt: Alles auf 0 setzen.
         for (int r = 0; r < rows; r++)
         {
-            // Schleife über alle Spalten in dieser Reihe.
             for (int c = 0; c < columns; c++)
             {
-                // Feld an Position (r, c) bekommt den Wert 0.
                 board[r, c] = 0;
             }
         }
 
-        // Hier kommt später die Logik für die 16 Felder mit Wert 4 dazu.
+        // 2. Schritt: Genau 16 Felder mit der 4 belegen.
+        // Wir zählen mit, wie viele 4er wir schon gesetzt haben.
+        int foursPlaced = 0;
+
+        // Solange wir noch nicht 16 Stück gesetzt haben, wiederholen wir die Schleife.
+        while (foursPlaced < 16)
+        {
+            // Zufällige Reihe zwischen 0 und rows-1.
+            int randomRow = Random.Range(0, rows);
+
+            // Zufällige Spalte zwischen 0 und columns-1.
+            int randomColumn = Random.Range(0, columns);
+
+            // Nur wenn an dieser Stelle noch eine 0 steht,
+            // dürfen wir hier eine 4 setzen.
+            if (board[randomRow, randomColumn] == 0)
+            {
+                board[randomRow, randomColumn] = 4;
+
+                // Wir erhöhen den Zähler, weil wir eine weitere 4 gesetzt haben.
+                foursPlaced++;
+            }
+            // Wenn dort schon eine 4 steht, machen wir einfach eine neue Runde,
+            // bis wir 16 verschiedene Felder gefunden haben.
+        }
     }
+
 
     // Gibt das komplette Board als Text in der Unity-Konsole aus.
     void PrintBoardToConsole()
