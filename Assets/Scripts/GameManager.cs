@@ -255,36 +255,63 @@ public class GameManager : MonoBehaviour
         // Vier Richtungen: oben, rechts, unten, links
         int[][] directions = new int[][]
         {
-            new int[] { -1, 0 },   // oben
-            new int[] { 0, 1 },    // rechts
-            new int[] { 1, 0 },    // unten
-            new int[] { 0, -1 }    // links
+        new int[] { -1, 0 },   // oben (Index 0)
+        new int[] { 0, 1 },    // rechts (Index 1)
+        new int[] { 1, 0 },    // unten (Index 2)
+        new int[] { 0, -1 }    // links (Index 3)
         };
 
-        // Gerade Züge (0 Richtungswechsel)
+        // === GERADE ZÜGE: VOLLE Range in eine Richtung ===
         foreach (var dir in directions)
         {
+            bool blocked = false;
+            int finalRow = piece.row;
+            int finalCol = piece.column;
+
+            // Jeden Schritt prüfen bis zur vollen Range
             for (int step = 1; step <= range; step++)
             {
                 int newRow = piece.row + dir[0] * step;
                 int newCol = piece.column + dir[1] * step;
 
                 if (!IsValidPosition(newRow, newCol))
+                {
+                    blocked = true;
                     break;
+                }
 
-                Piece targetPiece = GetPieceAt(newRow, newCol);
-                if (targetPiece != null && targetPiece.owner == piece.owner)
-                    break;  // Eigenes Piece blockiert
+                Piece stepPiece = GetPieceAt(newRow, newCol);
 
-                List<Position> path = BuildPath(piece.row, piece.column, newRow, newCol);
-                moves.Add(new ValidMove { from = new Position(piece.row, piece.column), to = new Position(newRow, newCol), path = path });
+                if (step == range)
+                {
+                    // Letzter Schritt: darf leer oder Gegner sein
+                    if (stepPiece != null && stepPiece.owner == piece.owner)
+                    {
+                        blocked = true;
+                        break;
+                    }
+                    finalRow = newRow;
+                    finalCol = newCol;
+                }
+                else
+                {
+                    // Zwischenschritte: MÜSSEN leer sein
+                    if (stepPiece != null)
+                    {
+                        blocked = true;
+                        break;
+                    }
+                }
+            }
 
-                if (targetPiece != null)
-                    break;  // Gegner blockiert, aber dieses Feld ist erlaubt
+            if (!blocked)
+            {
+                List<Position> path = BuildPath(piece.row, piece.column, finalRow, finalCol);
+                moves.Add(new ValidMove { from = new Position(piece.row, piece.column), to = new Position(finalRow, finalCol), path = path });
             }
         }
 
-        // L-förmige Züge (1 Richtungswechsel)
+        // === L-ZÜGE: Ein 90°-Turn (niemals 180° zurück!) ===
         for (int leg1 = 1; leg1 < range; leg1++)
         {
             int leg2 = range - leg1;
@@ -292,39 +319,85 @@ public class GameManager : MonoBehaviour
             for (int i = 0; i < 4; i++)
             {
                 int[] dir1 = directions[i];
-                int[] dir2_left = directions[(i + 3) % 4];  // 90° links
-                int[] dir2_right = directions[(i + 1) % 4]; // 90° rechts
 
-                // Versuche beide 90°-Drehungen
-                int[][] dir2Options = new int[][] { dir2_left, dir2_right };
+                // Nur 90°-Turns erlaubt: links (+3 mod 4) oder rechts (+1 mod 4)
+                // NICHT die Gegenrichtung (+2 mod 4)!
+                int[] dir2_left = directions[(i + 3) % 4];   // 90° links
+                int[] dir2_right = directions[(i + 1) % 4];  // 90° rechts
 
-                foreach (var dir2 in dir2Options)
+                foreach (var dir2 in new int[][] { dir2_left, dir2_right })
                 {
-                    int midRow = piece.row + dir1[0] * leg1;
-                    int midCol = piece.column + dir1[1] * leg1;
+                    // === Prüfe ersten Schenkel (leg1 Schritte) ===
+                    bool leg1Blocked = false;
+                    int midRow = piece.row;
+                    int midCol = piece.column;
 
-                    if (!IsValidPosition(midRow, midCol))
+                    for (int s = 1; s <= leg1; s++)
+                    {
+                        midRow = piece.row + dir1[0] * s;
+                        midCol = piece.column + dir1[1] * s;
+
+                        if (!IsValidPosition(midRow, midCol))
+                        {
+                            leg1Blocked = true;
+                            break;
+                        }
+
+                        Piece stepPiece = GetPieceAt(midRow, midCol);
+
+                        // Alle Schritte im ersten Schenkel MÜSSEN leer sein
+                        if (stepPiece != null)
+                        {
+                            leg1Blocked = true;
+                            break;
+                        }
+                    }
+
+                    if (leg1Blocked)
                         continue;
 
-                    Piece midPiece = GetPieceAt(midRow, midCol);
-                    if (midPiece != null && midPiece.owner == piece.owner)
-                        continue;  // Eigenes Piece blockiert
+                    // === Prüfe zweiten Schenkel (leg2 Schritte) ===
+                    bool leg2Blocked = false;
+                    int endRow = midRow;
+                    int endCol = midCol;
 
-                    if (midPiece != null && midPiece.owner != piece.owner)
-                        continue;  // Gegner blockiert Weg
+                    for (int s = 1; s <= leg2; s++)
+                    {
+                        endRow = midRow + dir2[0] * s;
+                        endCol = midCol + dir2[1] * s;
 
-                    // Zweiter Schenkel
-                    int endRow = midRow + dir2[0] * leg2;
-                    int endCol = midCol + dir2[1] * leg2;
+                        if (!IsValidPosition(endRow, endCol))
+                        {
+                            leg2Blocked = true;
+                            break;
+                        }
 
-                    if (!IsValidPosition(endRow, endCol))
+                        Piece stepPiece = GetPieceAt(endRow, endCol);
+
+                        if (s == leg2)
+                        {
+                            // Letzter Schritt: darf leer oder Gegner sein
+                            if (stepPiece != null && stepPiece.owner == piece.owner)
+                            {
+                                leg2Blocked = true;
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            // Zwischenschritte: MÜSSEN leer sein
+                            if (stepPiece != null)
+                            {
+                                leg2Blocked = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (leg2Blocked)
                         continue;
 
-                    Piece endPiece = GetPieceAt(endRow, endCol);
-                    if (endPiece != null && endPiece.owner == piece.owner)
-                        continue;  // Eigenes Piece blockiert
-
-                    // Weg ist frei (endPiece darf Gegner sein)
+                    // Beide Schenkel sind frei → gültiger L-Zug!
                     List<Position> path = BuildPathL(piece.row, piece.column, midRow, midCol, endRow, endCol);
                     moves.Add(new ValidMove { from = new Position(piece.row, piece.column), to = new Position(endRow, endCol), path = path });
                 }
@@ -333,6 +406,8 @@ public class GameManager : MonoBehaviour
 
         return moves;
     }
+
+
 
     // Berechnet legale Züge (ohne in Check geraten)
     public List<ValidMove> CalculateValidMoves(Piece piece)
@@ -532,6 +607,7 @@ public class GameManager : MonoBehaviour
         selectedPiece = piece;
         selectedPiece.SetSelected(true);
         validMoves = CalculateValidMoves(piece);
+        boardRenderer.HighlightValidMoves(validMoves);
 
         Debug.Log($"Piece ausgewählt: Owner {piece.owner}, Typ {piece.pieceType}, Range {piece.range}, Legale Züge: {validMoves.Count}");
     }
@@ -544,6 +620,7 @@ public class GameManager : MonoBehaviour
         }
         selectedPiece = null;
         validMoves.Clear();
+        boardRenderer.ClearHighlights();
     }
 
     public void ExecuteMove(ValidMove move)

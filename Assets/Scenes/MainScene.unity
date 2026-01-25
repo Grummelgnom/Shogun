@@ -165,6 +165,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rows: 8
   columns: 8
+  p1NormalPrefab: {fileID: 7367992893990249812, guid: d3b54f08a3aa8774fb5c1eaa5917b11b, type: 3}
+  p1ShogunPrefab: {fileID: 5771174678213792516, guid: 204853396e7be4943aae2d107a8ef44a, type: 3}
+  p2NormalPrefab: {fileID: 8225145804736333462, guid: 504e65664ee86e94f810d753aab5ab77, type: 3}
+  p2ShogunPrefab: {fileID: 5484922906228182161, guid: 50c5d93d2edadb241983957406144465, type: 3}
+  boardRenderer: {fileID: 448284584}
+  currentPlayer: 1
 --- !u!1 &448284583
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,4 +1,5 @@
-﻿using UnityEngine;  // Unity-Funktionen für GameObjects, Transform, Color, etc.
+﻿using System.Collections.Generic;
+using UnityEngine;  // Unity-Funktionen für GameObjects, Transform, Color, etc.
 
 // Dieses Script ist dafür zuständig, das Board aus dem GameManager
 // als sichtbare 2D-Kacheln in der Scene anzuzeigen.
@@ -18,6 +19,13 @@ public class BoardRenderer : MonoBehaviour
     // 1f bedeutet: Jede Kachel liegt 1 Einheit auseinander.
     // Du kannst den Wert im Inspector verändern, um das Grid größer/kleiner zu machen.
     public float tileSpacing = 1f;
+
+    // Dictionary um Tiles zu speichern und später zu highlighten
+    private Dictionary<string, GameObject> tiles = new Dictionary<string, GameObject>();
+
+    // Speichern aktuell gehighlighteter Ziele
+    private List<GameObject> highlightedTiles = new List<GameObject>();
+
 
     // Wird beim Start der Scene aufgerufen.
     void Start()
@@ -73,7 +81,7 @@ public class BoardRenderer : MonoBehaviour
                 // Kachel als Kind dieses BoardRenderers setzen,
                 // damit im Hierarchy-Fenster alles schön gruppiert ist.
                 tile.transform.parent = this.transform;
-
+                tiles[$"{r},{c}"] = tile;
                 // Das Tile-Script auf der Kachel konfigurieren.
                 Tile tileScript = tile.GetComponent<Tile>();
                 if (tileScript != null)
@@ -96,6 +104,7 @@ public class BoardRenderer : MonoBehaviour
                         sr.color = Color.red;
                     else
                         sr.color = Color.gray;
+                    sr.tag = value == 4 ? "red" : "gray";
                 }
                 else
                 {
@@ -121,4 +130,49 @@ public class BoardRenderer : MonoBehaviour
 
         return new Vector3(x, y, 0f);
     }
+
+    // Highlightet die gültigen Zugziele
+    public void HighlightValidMoves(List<ValidMove> validMoves)
+    {
+        // Alte Highlights löschen
+        ClearHighlights();
+
+        // Neue Highlights setzen
+        foreach (ValidMove move in validMoves)
+        {
+            string key = $"{move.to.row},{move.to.column}";
+
+            if (tiles.ContainsKey(key))
+            {
+                GameObject targetTile = tiles[key];
+                SpriteRenderer sr = targetTile.GetComponent<SpriteRenderer>();
+
+                if (sr != null)
+                {
+                    // Grün = gültiges Zielfeld
+                    sr.color = new Color(0, 1, 0, 0.7f);  // Grün mit etwas Transparenz
+                    highlightedTiles.Add(targetTile);
+                }
+            }
+        }
+    }
+
+    // Löscht alle Highlights
+    public void ClearHighlights()
+    {
+        foreach (GameObject tile in highlightedTiles)
+        {
+            SpriteRenderer sr = tile.GetComponent<SpriteRenderer>();
+            if (sr != null)
+            {
+                // Original-Farbe zurücksetzen basierend auf Tag
+                if (sr.tag == "red")
+                    sr.color = Color.red;
+                else
+                    sr.color = Color.gray;
+            }
+        }
+        highlightedTiles.Clear();
+    }
+
 }

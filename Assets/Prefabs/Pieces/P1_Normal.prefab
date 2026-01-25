@@ -101,7 +101,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   owner: 0
-  isShogun: 0
+  pieceType: 0
   row: 0
   column: 0
+  range: 0
   gameManager: {fileID: 0}
+  id: 
