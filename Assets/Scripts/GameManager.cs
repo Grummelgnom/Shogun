@@ -1,82 +1,69 @@
-using UnityEngine;  // Basis-Namespace für Unity-Funktionen (GameObject, MonoBehaviour, Debug, etc.)
+ï»¿using UnityEngine;  // Basis-Namespace fÃ¼r Unity-Funktionen (GameObject, MonoBehaviour, Debug, etc.)
 
 // Dieses Script verwaltet die Spiellogik im Hintergrund.
 // Es liegt auf dem GameObject "GameManager" in deiner Scene.
 public class GameManager : MonoBehaviour
 {
     // Anzahl der Reihen im Spielfeld (vertikal).
-    // "public" bedeutet: Du kannst diesen Wert im Inspector anpassen.
     public int rows = 8;
 
     // Anzahl der Spalten im Spielfeld (horizontal).
     public int columns = 8;
-    public GameObject piecePrefab;   // dein Figuren-Prefab
-    public BoardRenderer boardRenderer; // Referenz auf den BoardRenderer
 
+    // Vier getrennte Prefabs fÃ¼r Spieler 1/2 und Shogun/Normal.
+    public GameObject p1NormalPrefab;
+    public GameObject p1ShogunPrefab;
+    public GameObject p2NormalPrefab;
+    public GameObject p2ShogunPrefab;
 
-    // 2D-Array für unser Spielfeld.
+    // Referenz auf den BoardRenderer (wird im Inspector gesetzt).
+    public BoardRenderer boardRenderer;
+
+    // 2D-Array fÃ¼r unser Spielfeld (Magnet-Layout, 0â€“4).
     // board[reihe, spalte]
-    // Jeder Eintrag ist eine ganze Zahl (int),
-    // die später einen bestimmten Magnet-Zustand beschreibt (0–4).
     public int[,] board = new int[8, 8];
 
     // Diese Funktion wird von Unity automatisch einmal aufgerufen,
     // wenn die Scene gestartet wird und dieses GameObject aktiv ist.
     void Start()
     {
-        // Spielfeld vorbereiten:
-        // 1. Alles auf 0 setzen.
-        // 2. 16 zufällige Felder mit Wert 4 belegen.
+        // 1. Spielfeld vorbereiten (0 + 16 Vierer).
         InitBoard();
 
-        // Das Board als Text in der Konsole ausgeben,
-        // damit wir zur Kontrolle sehen, wie es aussieht.
+        // 2. Zu Kontrolle das Board in der Konsole ausgeben.
         PrintBoardToConsole();
-        SpawnStartPieces();
 
+        // 3. Figuren in der Startaufstellung spawnen.
+        SpawnStartPieces();
     }
 
     // Diese Funktion richtet das Spielfeld ein.
-    // Aktuell:
     // - Alle Felder bekommen zuerst den Wert 0.
-    // - Danach werden genau 16 verschiedene Felder mit dem Wert 4 gefüllt.
+    // - Danach werden genau 16 verschiedene Felder mit dem Wert 4 gefÃ¼llt.
     void InitBoard()
     {
         // Schritt 1: Alles auf 0 setzen.
-        for (int r = 0; r < rows; r++)  // r = row (Reihe)
+        for (int r = 0; r < rows; r++)
         {
-            for (int c = 0; c < columns; c++)  // c = column (Spalte)
+            for (int c = 0; c < columns; c++)
             {
-                // An der Position [r, c] setzen wir den Wert auf 0.
                 board[r, c] = 0;
             }
         }
 
         // Schritt 2: 16 Felder mit 4 belegen.
-        int foursPlaced = 0;  // Zählt, wie viele 4er wir bereits gesetzt haben.
+        int foursPlaced = 0;  // ZÃ¤hlt, wie viele 4er wir bereits gesetzt haben.
 
-        // Solange wir noch nicht 16 Vierer gesetzt haben,
-        // wiederholen wir die Schleife.
         while (foursPlaced < 16)
         {
-            // Zufällige Reihe wählen (0 bis rows-1).
             int randomRow = Random.Range(0, rows);
-
-            // Zufällige Spalte wählen (0 bis columns-1).
             int randomColumn = Random.Range(0, columns);
 
-            // Nur wenn das Feld an dieser Stelle noch 0 ist,
-            // dürfen wir hier eine 4 hinsetzen.
             if (board[randomRow, randomColumn] == 0)
             {
-                // An dieser Position wird eine 4 eingetragen.
                 board[randomRow, randomColumn] = 4;
-
-                // Zähler erhöhen: wir haben einen weiteren Vierer gesetzt.
                 foursPlaced++;
             }
-            // Wenn dort schon eine 4 steht, passiert nichts
-            // und die while-Schleife versucht es einfach mit neuen Zufallszahlen erneut.
         }
     }
 
@@ -84,65 +71,137 @@ public class GameManager : MonoBehaviour
     // Das ist sehr hilfreich zum Debuggen und Verstehen.
     void PrintBoardToConsole()
     {
-        // Hier bauen wir einen Text, der das Board als Grid darstellt.
         string output = "Current Board:\n";
 
-        // Schleife über jede Reihe.
         for (int r = 0; r < rows; r++)
         {
-            // Text für die aktuelle Zeile.
             string rowText = "";
 
-            // Schleife über jede Spalte in dieser Reihe.
             for (int c = 0; c < columns; c++)
             {
-                // Wert an der Position [r, c] holen.
                 int value = board[r, c];
-
-                // Wert plus Leerzeichen an die Zeile anhängen.
                 rowText += value + " ";
             }
 
-            // Die fertige Zeile plus Zeilenumbruch an den Gesamttext anhängen.
             output += rowText + "\n";
         }
 
-        // Den gesamten Text einmal in der Konsole ausgeben.
-        Debug.Log(output);  // In der Console siehst du dann das 8x8-Grid.
+        Debug.Log(output);
     }
-    // Setzt testweise ein paar Figuren auf feste Startpositionen.
+
+    // Richtet die Startaufstellung fÃ¼r beide Spieler ein.
+    // Nur erste (oben) und letzte Zeile (unten) werden belegt.
+    // Pro Zeile: 7 normale Figuren + 1 Shogun.
     void SpawnStartPieces()
     {
-        if (piecePrefab == null || boardRenderer == null)
+        if (boardRenderer == null)
         {
-            Debug.LogError("GameManager: piecePrefab oder boardRenderer nicht gesetzt!");
+            Debug.LogError("GameManager: boardRenderer nicht gesetzt!");
             return;
         }
 
-        // Beispiel: zwei Figuren für Spieler 1 und zwei für Spieler 2.
-        SpawnPiece(1, false, 0, 0); // Spieler 1, normale Figur, oben links
-        SpawnPiece(1, true, 0, 3); // Spieler 1, Shogun
-        SpawnPiece(2, false, 7, 7); // Spieler 2, normale Figur, unten rechts
-        SpawnPiece(2, true, 7, 3); // Spieler 2, Shogun
+        if (p1NormalPrefab == null || p1ShogunPrefab == null ||
+            p2NormalPrefab == null || p2ShogunPrefab == null)
+        {
+            Debug.LogError("GameManager: Mindestens eines der Piece-Prefabs ist nicht gesetzt!");
+            return;
+        }
+
+        // Wir gehen von 0-basierten Spalten aus: 0 = ganz links, 7 = ganz rechts.
+        // "4. Feld von rechts" â†’ Index 3 (0,1,2,3,4,5,6,7 â†’ 4. von rechts = 3).
+        int shogunColumn = 4;
+
+        // Spieler 1 (oben, Reihe 0)
+        for (int c = 0; c < columns; c++)
+        {
+            if (c == shogunColumn)
+                SpawnP1Shogun(0, c);    // Shogun oben
+            else
+                SpawnP1Normal(0, c);    // normale Figuren auf der restlichen ersten Zeile
+        }
+
+        // Spieler 2 (unten, Reihe 7)
+        for (int c = 0; c < columns; c++)
+        {
+            if (c == shogunColumn)
+                SpawnP2Shogun(7, c);    // Shogun unten, 4. Feld von rechts
+            else
+                SpawnP2Normal(7, c);    // normale Figuren auf der restlichen letzten Zeile
+        }
     }
 
-    // Hilfsfunktion: erstellt genau eine Figur an einer Board-Position.
-    void SpawnPiece(int owner, bool isShogun, int row, int column)
-    {
-        // Weltposition aus dem BoardRenderer berechnen lassen.
-        Vector3 worldPos = boardRenderer.GetWorldPosition(row, column);
+    // Hilfsfunktionen: instanziieren jeweils den passenden Prefab-Typ.
+    // Wir setzen einen kleinen Z-Offset, damit die Figuren sicher vor dem Brett liegen.
 
-        GameObject pieceObj = Instantiate(piecePrefab, worldPos, Quaternion.identity);
+    void SpawnP1Normal(int row, int column)
+    {
+        Vector3 worldPos = boardRenderer.GetWorldPosition(row, column);
+        worldPos.z = -0.1f;  // StÃ¼ck leicht vor das Brett ziehen (abhÃ¤ngig von deiner Kamera)
+
+        GameObject pieceObj = Instantiate(p1NormalPrefab, worldPos, Quaternion.identity);
 
         Piece piece = pieceObj.GetComponent<Piece>();
         if (piece != null)
         {
-            piece.owner = owner;
-            piece.isShogun = isShogun;
+            piece.owner = 1;
+            piece.isShogun = false;
             piece.row = row;
             piece.column = column;
             piece.gameManager = this;
         }
     }
 
+    void SpawnP1Shogun(int row, int column)
+    {
+        Vector3 worldPos = boardRenderer.GetWorldPosition(row, column);
+        worldPos.z = -0.1f;
+
+        GameObject pieceObj = Instantiate(p1ShogunPrefab, worldPos, Quaternion.identity);
+
+        Piece piece = pieceObj.GetComponent<Piece>();
+        if (piece != null)
+        {
+            piece.owner = 1;
+            piece.isShogun = true;
+            piece.row = row;
+            piece.column = column;
+            piece.gameManager = this;
+        }
+    }
+
+    void SpawnP2Normal(int row, int column)
+    {
+        Vector3 worldPos = boardRenderer.GetWorldPosition(row, column);
+        worldPos.z = -0.1f;
+
+        GameObject pieceObj = Instantiate(p2NormalPrefab, worldPos, Quaternion.identity);
+
+        Piece piece = pieceObj.GetComponent<Piece>();
+        if (piece != null)
+        {
+            piece.owner = 2;
+            piece.isShogun = false;
+            piece.row = row;
+            piece.column = column;
+            piece.gameManager = this;
+        }
+    }
+
+    void SpawnP2Shogun(int row, int column)
+    {
+        Vector3 worldPos = boardRenderer.GetWorldPosition(row, column);
+        worldPos.z = -0.1f;
+
+        GameObject pieceObj = Instantiate(p2ShogunPrefab, worldPos, Quaternion.identity);
+
+        Piece piece = pieceObj.GetComponent<Piece>();
+        if (piece != null)
+        {
+            piece.owner = 2;
+            piece.isShogun = true;
+            piece.row = row;
+            piece.column = column;
+            piece.gameManager = this;
+        }
+    }
 }

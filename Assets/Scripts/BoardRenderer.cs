@@ -47,7 +47,7 @@ public class BoardRenderer : MonoBehaviour
         int columns = gameManager.columns;
 
         float xOffset = -(columns - 1) * tileSpacing / 2f;
-        float yOffset = -(rows - 1) * tileSpacing / 2f -0.1f;
+        float yOffset = -(rows - 1) * tileSpacing / 2f - 0.1f;
 
         float x = column * tileSpacing + xOffset;
         float y = (rows - 1 - row) * tileSpacing + yOffset;
