@@ -68,6 +68,17 @@ public class BoardRenderer : MonoBehaviour
 
                 // Eine neue Kachel aus dem Prefab erzeugen.
                 GameObject tile = Instantiate(tilePrefab, tilePosition, Quaternion.identity);
+                tile.transform.parent = this.transform;
+
+                // Tile-Script auf der Kachel holen (muss am Prefab hängen)
+                Tile tileScript = tile.GetComponent<Tile>();
+                if (tileScript != null)
+                {
+                    tileScript.row = r;
+                    tileScript.column = c;
+                    tileScript.gameManager = gameManager;
+                }
+
 
                 // Die Kachel als Kind dieses BoardRenderers setzen,
                 // damit im Hierarchy-Fenster alles schön aufgeräumt ist.
