@@ -52,21 +52,93 @@ public class GameManager : MonoBehaviour
 
     void InitBoard()
     {
-        // Feste Magnetwerte (aus React-Version übernommen)
-        int[,] userDefinedGrid = new int[8, 8]
-        {
-            { 4, 1, 2, 3, 3, 2, 1, 4 },
-            { 3, 4, 1, 2, 2, 1, 4, 3 },
-            { 2, 3, 4, 1, 1, 4, 3, 2 },
-            { 1, 2, 3, 4, 4, 3, 2, 1 },
-            { 4, 3, 2, 1, 1, 2, 3, 4 },
-            { 3, 2, 1, 4, 4, 1, 2, 3 },
-            { 2, 1, 4, 3, 3, 4, 1, 2 },
-            { 1, 4, 3, 2, 2, 3, 4, 1 }
-        };
+        // Versuche mehrere Random-Grids und nimm das beste (wenigste Pärchen)
+        int bestScore = int.MaxValue;
+        int[,] bestGrid = null;
 
-        gridValues = userDefinedGrid;
+        int attempts = 500;  // Anzahl Versuche (höher = besseres Ergebnis, aber langsamer)
+
+        for (int attempt = 0; attempt < attempts; attempt++)
+        {
+            int[,] candidateGrid = GenerateRandomGrid();
+            int score = CountOrthogonalPairs(candidateGrid);
+
+            if (score < bestScore)
+            {
+                bestScore = score;
+                bestGrid = candidateGrid;
+            }
+        }
+
+        // Bestes Grid übernehmen
+        gridValues = bestGrid;
+        board = bestGrid;
+
+        Debug.Log($"Bestes Grid gefunden mit {bestScore} orthogonalen Pärchen (aus {attempts} Versuchen)");
     }
+
+    // Generiert ein zufälliges 8x8 Grid mit 16×1, 16×2, 16×3, 16×4
+    int[,] GenerateRandomGrid()
+    {
+        int[,] grid = new int[8, 8];
+
+        // Liste mit allen Werten: 16x1, 16x2, 16x3, 16x4
+        List<int> values = new List<int>();
+        for (int i = 1; i <= 4; i++)
+        {
+            for (int j = 0; j < 16; j++)
+            {
+                values.Add(i);
+            }
+        }
+
+        // Mischen (Fisher-Yates Shuffle)
+        for (int i = values.Count - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            int temp = values[i];
+            values[i] = values[j];
+            values[j] = temp;
+        }
+
+        // Auf Grid verteilen
+        int index = 0;
+        for (int r = 0; r < 8; r++)
+        {
+            for (int c = 0; c < 8; c++)
+            {
+                grid[r, c] = values[index];
+                index++;
+            }
+        }
+
+        return grid;
+    }
+
+    // Zählt, wie viele orthogonale Nachbarn denselben Wert haben
+    int CountOrthogonalPairs(int[,] grid)
+    {
+        int pairCount = 0;
+
+        for (int r = 0; r < 8; r++)
+        {
+            for (int c = 0; c < 8; c++)
+            {
+                int value = grid[r, c];
+
+                // Rechts prüfen
+                if (c < 7 && grid[r, c + 1] == value)
+                    pairCount++;
+
+                // Unten prüfen
+                if (r < 7 && grid[r + 1, c] == value)
+                    pairCount++;
+            }
+        }
+
+        return pairCount;
+    }
+
 
     void PrintBoardToConsole()
     {
@@ -214,7 +286,8 @@ public class GameManager : MonoBehaviour
 
     public Piece GetPieceAt(int row, int column)
     {
-        foreach (Piece p in pieces.Values)
+        // Über ToList() iterieren, um Kopie zu erstellen
+        foreach (Piece p in pieces.Values.ToList())
         {
             if (p.row == row && p.column == column)
                 return p;
@@ -225,7 +298,7 @@ public class GameManager : MonoBehaviour
     public int GetPlayerPieceCount(int owner)
     {
         int count = 0;
-        foreach (Piece p in pieces.Values)
+        foreach (Piece p in pieces.Values.ToList())
         {
             if (p.owner == owner)
                 count++;
@@ -235,7 +308,7 @@ public class GameManager : MonoBehaviour
 
     public Piece GetShogun(int owner)
     {
-        foreach (Piece p in pieces.Values)
+        foreach (Piece p in pieces.Values.ToList())
         {
             if (p.owner == owner && p.pieceType == PieceType.Shogun)
                 return p;
@@ -274,7 +347,7 @@ public class GameManager : MonoBehaviour
                 int newRow = piece.row + dir[0] * step;
                 int newCol = piece.column + dir[1] * step;
 
-                if (!IsValidPosition(newRow, newCol))
+                if (newRow < 0 || newRow >= rows || newCol < 0 || newCol >= columns)
                 {
                     blocked = true;
                     break;
@@ -312,34 +385,35 @@ public class GameManager : MonoBehaviour
         }
 
         // === L-ZÜGE: Ein 90°-Turn (niemals 180° zurück!) ===
-        for (int leg1 = 1; leg1 < range; leg1++)
+        for (int leg1Length = 1; leg1Length < range; leg1Length++)
         {
-            int leg2 = range - leg1;
+            int leg2Length = range - leg1Length;
 
-            for (int i = 0; i < 4; i++)
+            for (int dirIndex = 0; dirIndex < 4; dirIndex++)
             {
-                int[] dir1 = directions[i];
+                int[] firstDir = directions[dirIndex];
 
                 // Nur 90°-Turns erlaubt: links (+3 mod 4) oder rechts (+1 mod 4)
-                // NICHT die Gegenrichtung (+2 mod 4)!
-                int[] dir2_left = directions[(i + 3) % 4];   // 90° links
-                int[] dir2_right = directions[(i + 1) % 4];  // 90° rechts
+                int[] leftDir = directions[(dirIndex + 3) % 4];   // 90° links
+                int[] rightDir = directions[(dirIndex + 1) % 4];  // 90° rechts
 
-                foreach (var dir2 in new int[][] { dir2_left, dir2_right })
+                int[][] turnDirections = new int[][] { leftDir, rightDir };
+
+                foreach (var secondDir in turnDirections)
                 {
-                    // === Prüfe ersten Schenkel (leg1 Schritte) ===
-                    bool leg1Blocked = false;
+                    // === Prüfe ersten Schenkel ===
+                    bool firstLegBlocked = false;
                     int midRow = piece.row;
                     int midCol = piece.column;
 
-                    for (int s = 1; s <= leg1; s++)
+                    for (int s = 1; s <= leg1Length; s++)
                     {
-                        midRow = piece.row + dir1[0] * s;
-                        midCol = piece.column + dir1[1] * s;
+                        midRow = piece.row + firstDir[0] * s;
+                        midCol = piece.column + firstDir[1] * s;
 
-                        if (!IsValidPosition(midRow, midCol))
+                        if (midRow < 0 || midRow >= rows || midCol < 0 || midCol >= columns)
                         {
-                            leg1Blocked = true;
+                            firstLegBlocked = true;
                             break;
                         }
 
@@ -348,38 +422,38 @@ public class GameManager : MonoBehaviour
                         // Alle Schritte im ersten Schenkel MÜSSEN leer sein
                         if (stepPiece != null)
                         {
-                            leg1Blocked = true;
+                            firstLegBlocked = true;
                             break;
                         }
                     }
 
-                    if (leg1Blocked)
+                    if (firstLegBlocked)
                         continue;
 
-                    // === Prüfe zweiten Schenkel (leg2 Schritte) ===
-                    bool leg2Blocked = false;
+                    // === Prüfe zweiten Schenkel ===
+                    bool secondLegBlocked = false;
                     int endRow = midRow;
                     int endCol = midCol;
 
-                    for (int s = 1; s <= leg2; s++)
+                    for (int s = 1; s <= leg2Length; s++)
                     {
-                        endRow = midRow + dir2[0] * s;
-                        endCol = midCol + dir2[1] * s;
+                        endRow = midRow + secondDir[0] * s;
+                        endCol = midCol + secondDir[1] * s;
 
-                        if (!IsValidPosition(endRow, endCol))
+                        if (endRow < 0 || endRow >= rows || endCol < 0 || endCol >= columns)
                         {
-                            leg2Blocked = true;
+                            secondLegBlocked = true;
                             break;
                         }
 
                         Piece stepPiece = GetPieceAt(endRow, endCol);
 
-                        if (s == leg2)
+                        if (s == leg2Length)
                         {
                             // Letzter Schritt: darf leer oder Gegner sein
                             if (stepPiece != null && stepPiece.owner == piece.owner)
                             {
-                                leg2Blocked = true;
+                                secondLegBlocked = true;
                                 break;
                             }
                         }
@@ -388,13 +462,13 @@ public class GameManager : MonoBehaviour
                             // Zwischenschritte: MÜSSEN leer sein
                             if (stepPiece != null)
                             {
-                                leg2Blocked = true;
+                                secondLegBlocked = true;
                                 break;
                             }
                         }
                     }
 
-                    if (leg2Blocked)
+                    if (secondLegBlocked)
                         continue;
 
                     // Beide Schenkel sind frei → gültiger L-Zug!
@@ -423,16 +497,30 @@ public class GameManager : MonoBehaviour
             int oldRow = piece.row;
             int oldCol = piece.column;
 
+            // === NEU: Wenn ein Piece geschlagen wird, temporär aus Dictionary entfernen ===
+            bool removedPiece = false;
+            if (targetPiece != null)
+            {
+                pieces.Remove(targetPiece.id);
+                removedPiece = true;
+            }
+
             // Piece bewegen
             piece.row = move.to.row;
             piece.column = move.to.column;
 
-            // Prüfe: bin ich in Check?
+            // Prüfe: bin ich (der ziehende Spieler) in Check?
             bool inCheck = IsPlayerInCheck(piece.owner);
 
-            // Undo
+            // === UNDO: Alles zurücksetzen ===
             piece.row = oldRow;
             piece.column = oldCol;
+
+            // Geschlagenes Piece wieder einfügen
+            if (removedPiece && targetPiece != null)
+            {
+                pieces[targetPiece.id] = targetPiece;
+            }
 
             // Nur legale Züge zurückgeben
             if (!inCheck)
@@ -441,6 +529,7 @@ public class GameManager : MonoBehaviour
 
         return legalMoves;
     }
+
 
     public List<Position> BuildPath(int fromRow, int fromCol, int toRow, int toCol)
     {
@@ -503,25 +592,27 @@ public class GameManager : MonoBehaviour
         return path;
     }
 
-    public bool IsValidPosition(int row, int column)
-    {
-        return row >= 0 && row < rows && column >= 0 && column < columns;
-    }
-
     // Gibt alle bedrohten Felder eines Spielers zurück
     public HashSet<string> GetThreatenedCells(int attackingPlayer)
     {
         HashSet<string> threats = new HashSet<string>();
 
-        foreach (Piece piece in pieces.Values)
+        // Über Kopie iterieren
+        List<Piece> attackingPieces = new List<Piece>();
+        foreach (Piece p in pieces.Values)
         {
-            if (piece.owner == attackingPlayer)
+            if (p != null && p.owner == attackingPlayer)
+                attackingPieces.Add(p);
+        }
+
+        foreach (Piece piece in attackingPieces)
+        {
+            if (piece == null) continue;
+
+            List<ValidMove> moves = CalculateRawMoves(piece);
+            foreach (ValidMove move in moves)
             {
-                List<ValidMove> moves = CalculateRawMoves(piece);
-                foreach (ValidMove move in moves)
-                {
-                    threats.Add($"{move.to.row},{move.to.column}");
-                }
+                threats.Add($"{move.to.row},{move.to.column}");
             }
         }
 
@@ -544,17 +635,27 @@ public class GameManager : MonoBehaviour
     // Prüft, ob ein Spieler legale Züge hat
     public bool HasLegalMoves(int player)
     {
-        foreach (Piece piece in pieces.Values)
+        // WICHTIG: Über Kopie iterieren, damit CalculateValidMoves das Dictionary ändern kann
+        List<Piece> playerPieces = new List<Piece>();
+
+        foreach (Piece p in pieces.Values)
         {
-            if (piece.owner == player)
-            {
-                List<ValidMove> legalMoves = CalculateValidMoves(piece);
-                if (legalMoves.Count > 0)
-                    return true;
-            }
+            if (p != null && p.owner == player)
+                playerPieces.Add(p);
         }
+
+        foreach (Piece piece in playerPieces)
+        {
+            if (piece == null) continue;  // Sicherheitscheck
+
+            List<ValidMove> legalMoves = CalculateValidMoves(piece);
+            if (legalMoves.Count > 0)
+                return true;
+        }
+
         return false;
     }
+
 
     // === UI / INTERACTION ===
 
