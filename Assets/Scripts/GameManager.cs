@@ -10,6 +10,9 @@ public class GameManager : MonoBehaviour
 
     // Anzahl der Spalten im Spielfeld (horizontal).
     public int columns = 8;
+    public GameObject piecePrefab;   // dein Figuren-Prefab
+    public BoardRenderer boardRenderer; // Referenz auf den BoardRenderer
+
 
     // 2D-Array für unser Spielfeld.
     // board[reihe, spalte]
@@ -29,6 +32,8 @@ public class GameManager : MonoBehaviour
         // Das Board als Text in der Konsole ausgeben,
         // damit wir zur Kontrolle sehen, wie es aussieht.
         PrintBoardToConsole();
+        SpawnStartPieces();
+
     }
 
     // Diese Funktion richtet das Spielfeld ein.
@@ -105,4 +110,39 @@ public class GameManager : MonoBehaviour
         // Den gesamten Text einmal in der Konsole ausgeben.
         Debug.Log(output);  // In der Console siehst du dann das 8x8-Grid.
     }
+    // Setzt testweise ein paar Figuren auf feste Startpositionen.
+    void SpawnStartPieces()
+    {
+        if (piecePrefab == null || boardRenderer == null)
+        {
+            Debug.LogError("GameManager: piecePrefab oder boardRenderer nicht gesetzt!");
+            return;
+        }
+
+        // Beispiel: zwei Figuren für Spieler 1 und zwei für Spieler 2.
+        SpawnPiece(1, false, 0, 0); // Spieler 1, normale Figur, oben links
+        SpawnPiece(1, true, 0, 3); // Spieler 1, Shogun
+        SpawnPiece(2, false, 7, 7); // Spieler 2, normale Figur, unten rechts
+        SpawnPiece(2, true, 7, 3); // Spieler 2, Shogun
+    }
+
+    // Hilfsfunktion: erstellt genau eine Figur an einer Board-Position.
+    void SpawnPiece(int owner, bool isShogun, int row, int column)
+    {
+        // Weltposition aus dem BoardRenderer berechnen lassen.
+        Vector3 worldPos = boardRenderer.GetWorldPosition(row, column);
+
+        GameObject pieceObj = Instantiate(piecePrefab, worldPos, Quaternion.identity);
+
+        Piece piece = pieceObj.GetComponent<Piece>();
+        if (piece != null)
+        {
+            piece.owner = owner;
+            piece.isShogun = isShogun;
+            piece.row = row;
+            piece.column = column;
+            piece.gameManager = this;
+        }
+    }
+
 }

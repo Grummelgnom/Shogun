@@ -39,6 +39,22 @@ public class BoardRenderer : MonoBehaviour
         // Wenn alles da ist, bauen wir das visuelle Board.
         CreateBoardVisuals();
     }
+    // Rechnet eine Board-Position (row, column) in eine Weltposition um,
+    // damit Figuren genau auf den Tiles sitzen.
+    public Vector3 GetWorldPosition(int row, int column)
+    {
+        int rows = gameManager.rows;
+        int columns = gameManager.columns;
+
+        float xOffset = -(columns - 1) * tileSpacing / 2f;
+        float yOffset = -(rows - 1) * tileSpacing / 2f -0.1f;
+
+        float x = column * tileSpacing + xOffset;
+        float y = (rows - 1 - row) * tileSpacing + yOffset;
+
+        return new Vector3(x, y, 0f);
+    }
+
 
     // Erstellt für jedes Feld im Board eine sichtbare Kachel.
     void CreateBoardVisuals()
