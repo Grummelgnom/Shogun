@@ -6,8 +6,8 @@ using UnityEngine;
 // Enum für die Piece-Typen (Soldat oder Shogun)
 public enum PieceType
 {
-    Soldier,    // Normaler Soldat/Bauer
-    Shogun      // Der Anführer
+    Soldier,
+    Shogun
 }
 
 public class GameManager : MonoBehaviour
@@ -19,32 +19,46 @@ public class GameManager : MonoBehaviour
     public GameObject p1ShogunPrefab;
     public GameObject p2NormalPrefab;
     public GameObject p2ShogunPrefab;
+
     public enum GameMode { TwoPlayer, VsAI }
-    public GameMode mode = GameMode.TwoPlayer;  // Inspector-Default
+    public GameMode mode = GameMode.TwoPlayer;
 
     public BoardRenderer boardRenderer;
 
-    // board-Array korrekt deklarieren
     public int[,] board = new int[8, 8];
-
-    // Magnetfeld-Werte (feste 8x8 Grid)
     public int[,] gridValues = new int[8, 8];
 
-    // ... rest des Codes
-
-
-    // Alle Pieces in der Szene
     private Dictionary<string, Piece> pieces = new Dictionary<string, Piece>();
 
-    // ... rest des Codes
-
-
-    // Spielzustand
-    public int currentPlayer = 1;  // 1 = P1 (oben), 2 = P2 (unten)
+    public int currentPlayer = 1;
     private Piece selectedPiece = null;
     private List<ValidMove> validMoves = new List<ValidMove>();
-    private int winner = 0;  // 0 = keiner, 1 = P1, 2 = P2
+    private int winner = 0;
     private int turnCount = 0;
+
+    // ========= AI SETTINGS =========
+    [Header("AI")]
+    public int aiPlayer = 2;
+    [Range(1, 5)] public int aiDepth = 3;      // Depth 3 = sehr viel weniger Freeze-Risiko
+    public float aiDelay = 0.35f;              // Optik: "KI denkt nach"
+    private bool aiThinking = false;
+
+    // ========= MINIMAX SIM STACK (Undo Fix) =========
+    private struct SimStep
+    {
+        public Piece mover;
+        public int moverRowBefore;
+        public int moverColBefore;
+        public int moverRangeBefore;
+
+        public Piece captured;       // null wenn kein Schlag
+        public string capturedId;
+        public int capturedRowBefore;
+        public int capturedColBefore;
+        public int capturedRangeBefore;
+    }
+
+    private Stack<SimStep> simStack = new Stack<SimStep>();
 
     void Start()
     {
@@ -53,13 +67,14 @@ public class GameManager : MonoBehaviour
         SpawnStartPieces();
     }
 
+    // =======================
+    // Board Init
+    // =======================
     void InitBoard()
     {
-        // Versuche mehrere Random-Grids und nimm das beste (wenigste Pärchen)
         int bestScore = int.MaxValue;
         int[,] bestGrid = null;
-
-        int attempts = 500;  // Anzahl Versuche (höher = besseres Ergebnis, aber langsamer)
+        int attempts = 500;
 
         for (int attempt = 0; attempt < attempts; attempt++)
         {
@@ -73,52 +88,35 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // Bestes Grid übernehmen
         gridValues = bestGrid;
         board = bestGrid;
 
         Debug.Log($"Bestes Grid gefunden mit {bestScore} orthogonalen Pärchen (aus {attempts} Versuchen)");
     }
 
-    // Generiert ein zufälliges 8x8 Grid mit 16×1, 16×2, 16×3, 16×4
     int[,] GenerateRandomGrid()
     {
         int[,] grid = new int[8, 8];
 
-        // Liste mit allen Werten: 16x1, 16x2, 16x3, 16x4
         List<int> values = new List<int>();
         for (int i = 1; i <= 4; i++)
-        {
             for (int j = 0; j < 16; j++)
-            {
                 values.Add(i);
-            }
-        }
 
-        // Mischen (Fisher-Yates Shuffle)
         for (int i = values.Count - 1; i > 0; i--)
         {
             int j = Random.Range(0, i + 1);
-            int temp = values[i];
-            values[i] = values[j];
-            values[j] = temp;
+            (values[i], values[j]) = (values[j], values[i]);
         }
 
-        // Auf Grid verteilen
         int index = 0;
         for (int r = 0; r < 8; r++)
-        {
             for (int c = 0; c < 8; c++)
-            {
-                grid[r, c] = values[index];
-                index++;
-            }
-        }
+                grid[r, c] = values[index++];
 
         return grid;
     }
 
-    // Zählt, wie viele orthogonale Nachbarn denselben Wert haben
     int CountOrthogonalPairs(int[,] grid)
     {
         int pairCount = 0;
@@ -128,20 +126,13 @@ public class GameManager : MonoBehaviour
             for (int c = 0; c < 8; c++)
             {
                 int value = grid[r, c];
-
-                // Rechts prüfen
-                if (c < 7 && grid[r, c + 1] == value)
-                    pairCount++;
-
-                // Unten prüfen
-                if (r < 7 && grid[r + 1, c] == value)
-                    pairCount++;
+                if (c < 7 && grid[r, c + 1] == value) pairCount++;
+                if (r < 7 && grid[r + 1, c] == value) pairCount++;
             }
         }
 
         return pairCount;
     }
-
 
     void PrintBoardToConsole()
     {
@@ -150,14 +141,15 @@ public class GameManager : MonoBehaviour
         {
             string rowText = "";
             for (int c = 0; c < columns; c++)
-            {
                 rowText += gridValues[r, c] + " ";
-            }
             output += rowText + "\n";
         }
         Debug.Log(output);
     }
 
+    // =======================
+    // Spawn
+    // =======================
     void SpawnStartPieces()
     {
         if (boardRenderer == null)
@@ -166,8 +158,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        if (p1NormalPrefab == null || p1ShogunPrefab == null ||
-            p2NormalPrefab == null || p2ShogunPrefab == null)
+        if (p1NormalPrefab == null || p1ShogunPrefab == null || p2NormalPrefab == null || p2ShogunPrefab == null)
         {
             Debug.LogError("GameManager: Piece-Prefabs nicht gesetzt!");
             return;
@@ -175,22 +166,18 @@ public class GameManager : MonoBehaviour
 
         int shogunColumn = 4;
 
-        // Spieler 2 (oben, Reihe 0)
+        // Spieler 2 oben (Reihe 0)
         for (int c = 0; c < columns; c++)
         {
-            if (c == shogunColumn)
-                SpawnP2Shogun(0, c);
-            else
-                SpawnP2Normal(0, c);
+            if (c == shogunColumn) SpawnP2Shogun(0, c);
+            else SpawnP2Normal(0, c);
         }
 
-        // Spieler 1 (unten, Reihe 7)
+        // Spieler 1 unten (Reihe 7)
         for (int c = 0; c < columns; c++)
         {
-            if (c == shogunColumn)
-                SpawnP1Shogun(7, c);
-            else
-                SpawnP1Normal(7, c);
+            if (c == shogunColumn) SpawnP1Shogun(7, c);
+            else SpawnP1Normal(7, c);
         }
     }
 
@@ -278,21 +265,26 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // === KERNLOGIK ===
-
+    // =======================
+    // Core Helpers
+    // =======================
     public int GetInterpretedGridValue(int row, int column, int owner)
     {
         int rawVal = gridValues[row, column];
-        // Spieler 1: normaler Wert, Spieler 2: invertiert
         return owner == 1 ? rawVal : 5 - rawVal;
+    }
+
+    private int CalcRange(int interpretedGridValue, PieceType type)
+    {
+        if (type == PieceType.Shogun) return interpretedGridValue >= 3 ? 2 : 1;
+        return Mathf.Clamp(interpretedGridValue, 1, 4);
     }
 
     public Piece GetPieceAt(int row, int column)
     {
-        // Über ToList() iterieren, um Kopie zu erstellen
         foreach (Piece p in pieces.Values.ToList())
         {
-            if (p.row == row && p.column == column)
+            if (p != null && p.row == row && p.column == column)
                 return p;
         }
         return null;
@@ -302,49 +294,41 @@ public class GameManager : MonoBehaviour
     {
         int count = 0;
         foreach (Piece p in pieces.Values.ToList())
-        {
-            if (p.owner == owner)
-                count++;
-        }
+            if (p != null && p.owner == owner) count++;
         return count;
     }
 
     public Piece GetShogun(int owner)
     {
         foreach (Piece p in pieces.Values.ToList())
-        {
-            if (p.owner == owner && p.pieceType == PieceType.Shogun)
-                return p;
-        }
+            if (p != null && p.owner == owner && p.pieceType == PieceType.Shogun) return p;
         return null;
     }
 
-    // Berechnet Raw Moves: L-förmige Züge mit Pfad-Verfolgung
+    // =======================
+    // Moves (deine Logik)
+    // =======================
     public List<ValidMove> CalculateRawMoves(Piece piece)
     {
         List<ValidMove> moves = new List<ValidMove>();
 
         int range = piece.range;
-        if (range <= 0)
-            return moves;
+        if (range <= 0) return moves;
 
-        // Vier Richtungen: oben, rechts, unten, links
         int[][] directions = new int[][]
         {
-        new int[] { -1, 0 },   // oben (Index 0)
-        new int[] { 0, 1 },    // rechts (Index 1)
-        new int[] { 1, 0 },    // unten (Index 2)
-        new int[] { 0, -1 }    // links (Index 3)
+            new int[] { -1, 0 },
+            new int[] { 0, 1 },
+            new int[] { 1, 0 },
+            new int[] { 0, -1 }
         };
 
-        // === GERADE ZÜGE: VOLLE Range in eine Richtung ===
         foreach (var dir in directions)
         {
             bool blocked = false;
             int finalRow = piece.row;
             int finalCol = piece.column;
 
-            // Jeden Schritt prüfen bis zur vollen Range
             for (int step = 1; step <= range; step++)
             {
                 int newRow = piece.row + dir[0] * step;
@@ -360,7 +344,6 @@ public class GameManager : MonoBehaviour
 
                 if (step == range)
                 {
-                    // Letzter Schritt: darf leer oder Gegner sein
                     if (stepPiece != null && stepPiece.owner == piece.owner)
                     {
                         blocked = true;
@@ -371,7 +354,6 @@ public class GameManager : MonoBehaviour
                 }
                 else
                 {
-                    // Zwischenschritte: MÜSSEN leer sein
                     if (stepPiece != null)
                     {
                         blocked = true;
@@ -387,7 +369,6 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // === L-ZÜGE: Ein 90°-Turn (niemals 180° zurück!) ===
         for (int leg1Length = 1; leg1Length < range; leg1Length++)
         {
             int leg2Length = range - leg1Length;
@@ -396,15 +377,13 @@ public class GameManager : MonoBehaviour
             {
                 int[] firstDir = directions[dirIndex];
 
-                // Nur 90°-Turns erlaubt: links (+3 mod 4) oder rechts (+1 mod 4)
-                int[] leftDir = directions[(dirIndex + 3) % 4];   // 90° links
-                int[] rightDir = directions[(dirIndex + 1) % 4];  // 90° rechts
+                int[] leftDir = directions[(dirIndex + 3) % 4];
+                int[] rightDir = directions[(dirIndex + 1) % 4];
 
                 int[][] turnDirections = new int[][] { leftDir, rightDir };
 
                 foreach (var secondDir in turnDirections)
                 {
-                    // === Prüfe ersten Schenkel ===
                     bool firstLegBlocked = false;
                     int midRow = piece.row;
                     int midCol = piece.column;
@@ -420,20 +399,15 @@ public class GameManager : MonoBehaviour
                             break;
                         }
 
-                        Piece stepPiece = GetPieceAt(midRow, midCol);
-
-                        // Alle Schritte im ersten Schenkel MÜSSEN leer sein
-                        if (stepPiece != null)
+                        if (GetPieceAt(midRow, midCol) != null)
                         {
                             firstLegBlocked = true;
                             break;
                         }
                     }
 
-                    if (firstLegBlocked)
-                        continue;
+                    if (firstLegBlocked) continue;
 
-                    // === Prüfe zweiten Schenkel ===
                     bool secondLegBlocked = false;
                     int endRow = midRow;
                     int endCol = midCol;
@@ -453,7 +427,6 @@ public class GameManager : MonoBehaviour
 
                         if (s == leg2Length)
                         {
-                            // Letzter Schritt: darf leer oder Gegner sein
                             if (stepPiece != null && stepPiece.owner == piece.owner)
                             {
                                 secondLegBlocked = true;
@@ -462,7 +435,6 @@ public class GameManager : MonoBehaviour
                         }
                         else
                         {
-                            // Zwischenschritte: MÜSSEN leer sein
                             if (stepPiece != null)
                             {
                                 secondLegBlocked = true;
@@ -471,10 +443,8 @@ public class GameManager : MonoBehaviour
                         }
                     }
 
-                    if (secondLegBlocked)
-                        continue;
+                    if (secondLegBlocked) continue;
 
-                    // Beide Schenkel sind frei → gültiger L-Zug!
                     List<Position> path = BuildPathL(piece.row, piece.column, midRow, midCol, endRow, endCol);
                     moves.Add(new ValidMove { from = new Position(piece.row, piece.column), to = new Position(endRow, endCol), path = path });
                 }
@@ -484,9 +454,6 @@ public class GameManager : MonoBehaviour
         return moves;
     }
 
-
-
-    // Berechnet legale Züge (ohne in Check geraten)
     public List<ValidMove> CalculateValidMoves(Piece piece)
     {
         List<ValidMove> rawMoves = CalculateRawMoves(piece);
@@ -494,13 +461,12 @@ public class GameManager : MonoBehaviour
 
         foreach (ValidMove move in rawMoves)
         {
-            // Simuliere den Zug
             Piece targetPiece = GetPieceAt(move.to.row, move.to.column);
 
             int oldRow = piece.row;
             int oldCol = piece.column;
+            int oldRange = piece.range;
 
-            // === NEU: Wenn ein Piece geschlagen wird, temporär aus Dictionary entfernen ===
             bool removedPiece = false;
             if (targetPiece != null)
             {
@@ -508,35 +474,32 @@ public class GameManager : MonoBehaviour
                 removedPiece = true;
             }
 
-            // Piece bewegen
             piece.row = move.to.row;
             piece.column = move.to.column;
 
-            // Prüfe: bin ich (der ziehende Spieler) in Check?
+            // Range temporär updaten (sonst kann Check-Berechnung in Folgezügen schief werden)
+            int interpreted = GetInterpretedGridValue(piece.row, piece.column, piece.owner);
+            piece.range = CalcRange(interpreted, piece.pieceType);
+
             bool inCheck = IsPlayerInCheck(piece.owner);
 
-            // === UNDO: Alles zurücksetzen ===
             piece.row = oldRow;
             piece.column = oldCol;
+            piece.range = oldRange;
 
-            // Geschlagenes Piece wieder einfügen
             if (removedPiece && targetPiece != null)
-            {
                 pieces[targetPiece.id] = targetPiece;
-            }
 
-            // Nur legale Züge zurückgeben
-            if (!inCheck)
-                legalMoves.Add(move);
+            if (!inCheck) legalMoves.Add(move);
         }
 
         return legalMoves;
     }
 
-
     public List<Position> BuildPath(int fromRow, int fromCol, int toRow, int toCol)
     {
         List<Position> path = new List<Position>();
+
         int dr = toRow - fromRow;
         int dc = toCol - fromCol;
 
@@ -560,7 +523,6 @@ public class GameManager : MonoBehaviour
     {
         List<Position> path = new List<Position>();
 
-        // Erste Etappe
         int dr = midRow - fromRow;
         int dc = midCol - fromCol;
         int stepR = dr == 0 ? 0 : dr > 0 ? 1 : -1;
@@ -576,7 +538,6 @@ public class GameManager : MonoBehaviour
             path.Add(new Position(r, c));
         }
 
-        // Zweite Etappe
         dr = toRow - midRow;
         dc = toCol - midCol;
         stepR = dr == 0 ? 0 : dr > 0 ? 1 : -1;
@@ -595,39 +556,31 @@ public class GameManager : MonoBehaviour
         return path;
     }
 
-    // Gibt alle bedrohten Felder eines Spielers zurück
+    // =======================
+    // Threat / Check / Legal
+    // =======================
     public HashSet<string> GetThreatenedCells(int attackingPlayer)
     {
         HashSet<string> threats = new HashSet<string>();
 
-        // Über Kopie iterieren
         List<Piece> attackingPieces = new List<Piece>();
         foreach (Piece p in pieces.Values)
-        {
-            if (p != null && p.owner == attackingPlayer)
-                attackingPieces.Add(p);
-        }
+            if (p != null && p.owner == attackingPlayer) attackingPieces.Add(p);
 
         foreach (Piece piece in attackingPieces)
         {
-            if (piece == null) continue;
-
             List<ValidMove> moves = CalculateRawMoves(piece);
             foreach (ValidMove move in moves)
-            {
                 threats.Add($"{move.to.row},{move.to.column}");
-            }
         }
 
         return threats;
     }
 
-    // Prüft, ob ein Spieler in Check ist
     public bool IsPlayerInCheck(int player)
     {
         Piece shogun = GetShogun(player);
-        if (shogun == null)
-            return false;
+        if (shogun == null) return false;
 
         int opponent = player == 1 ? 2 : 1;
         HashSet<string> threats = GetThreatenedCells(opponent);
@@ -635,120 +588,64 @@ public class GameManager : MonoBehaviour
         return threats.Contains($"{shogun.row},{shogun.column}");
     }
 
-    // Prüft, ob ein Spieler legale Züge hat
     public bool HasLegalMoves(int player)
     {
-        // WICHTIG: Über Kopie iterieren, damit CalculateValidMoves das Dictionary ändern kann
         List<Piece> playerPieces = new List<Piece>();
-
         foreach (Piece p in pieces.Values)
-        {
-            if (p != null && p.owner == player)
-                playerPieces.Add(p);
-        }
+            if (p != null && p.owner == player) playerPieces.Add(p);
 
         foreach (Piece piece in playerPieces)
-        {
-            if (piece == null) continue;  // Sicherheitscheck
-
-            List<ValidMove> legalMoves = CalculateValidMoves(piece);
-            if (legalMoves.Count > 0)
-                return true;
-        }
+            if (CalculateValidMoves(piece).Count > 0) return true;
 
         return false;
     }
 
-
-    // === UI / INTERACTION ===
-
+    // =======================
+    // UI / Interaction
+    // =======================
     public void OnTileClicked(int row, int column)
     {
-        // KI-Check: VsAI && KI dran (Player 2) → Auto-Zug
-        if (mode == GameMode.VsAI && currentPlayer == 2)
-        {
-            StartCoroutine(AIMakeMove());  // Warte 0.5s, dann KI-Zug
-            return;
-        }
+        if (winner != 0) return;
 
-        if (winner != 0)
-            return;  // Spiel vorbei
+        // Wichtig: NICHT hier KI starten – sonst startet sie bei jedem Klick erneut und kann "freezen"
+        if (mode == GameMode.VsAI && currentPlayer == aiPlayer)
+            return;
 
         Piece clickedPiece = GetPieceAt(row, column);
 
         if (clickedPiece != null && clickedPiece.owner == currentPlayer)
         {
-            // Figur des aktuellen Spielers angeklickt → Auswahl
             SelectPiece(clickedPiece);
         }
         else if (selectedPiece != null && clickedPiece == null)
         {
-            // Leeres Feld und Piece ausgewählt → Zug versuchen
             ValidMove move = validMoves.FirstOrDefault(m => m.to.row == row && m.to.column == column);
-            if (move != null)
-            {
-                ExecuteMove(move);
-            }
-            else
-            {
-                DeselectPiece();
-            }
+            if (move != null) ExecuteMove(move);
+            else DeselectPiece();
         }
         else if (clickedPiece != null && clickedPiece.owner != currentPlayer)
         {
-            // Gegner-Figur: versuche zu schlagen
             if (selectedPiece != null)
             {
                 ValidMove move = validMoves.FirstOrDefault(m => m.to.row == row && m.to.column == column);
-                if (move != null)
-                {
-                    ExecuteMove(move);
-                }
+                if (move != null) ExecuteMove(move);
             }
         }
     }
-    private IEnumerator AIMakeMove()
-    {
-        yield return new WaitForSeconds(0.5f);
-
-        // FIX: .Values.ToList() → Kopie, keine Modifikation!
-        var kiPieces = pieces.Values.ToList().Where(p => p != null && p.owner == 2).ToList();
-
-        foreach (Piece p in kiPieces)
-        {
-            var moves = CalculateValidMoves(p);
-            if (moves.Count > 0)
-            {
-                ExecuteMove(moves[0]);
-                yield break;
-            }
-        }
-        Debug.Log("KI: Kein Zug möglich");
-    }
-
-
 
     public void SelectPiece(Piece piece)
     {
-        if (selectedPiece != null)
-        {
-            selectedPiece.SetSelected(false);
-        }
+        if (selectedPiece != null) selectedPiece.SetSelected(false);
 
         selectedPiece = piece;
         selectedPiece.SetSelected(true);
         validMoves = CalculateValidMoves(piece);
         boardRenderer.HighlightValidMoves(validMoves);
-
-        Debug.Log($"Piece ausgewählt: Owner {piece.owner}, Typ {piece.pieceType}, Range {piece.range}, Legale Züge: {validMoves.Count}");
     }
 
     public void DeselectPiece()
     {
-        if (selectedPiece != null)
-        {
-            selectedPiece.SetSelected(false);
-        }
+        if (selectedPiece != null) selectedPiece.SetSelected(false);
         selectedPiece = null;
         validMoves.Clear();
         boardRenderer.ClearHighlights();
@@ -759,10 +656,8 @@ public class GameManager : MonoBehaviour
         Piece movingPiece = GetPieceAt(move.from.row, move.from.column);
         Piece targetPiece = GetPieceAt(move.to.row, move.to.column);
 
-        if (movingPiece == null)
-            return;
+        if (movingPiece == null) return;
 
-        // Piece bewegen
         movingPiece.row = move.to.row;
         movingPiece.column = move.to.column;
 
@@ -770,99 +665,257 @@ public class GameManager : MonoBehaviour
         newWorldPos.z = -0.1f;
         movingPiece.transform.position = newWorldPos;
 
-        // Wenn Gegner geschlagen
         if (targetPiece != null)
         {
-            Debug.Log($"Piece geschlagen: Owner {targetPiece.owner}, Typ {targetPiece.pieceType}");
             pieces.Remove(targetPiece.id);
             Destroy(targetPiece.gameObject);
 
-            // Shogun geschlagen = sofort gewonnen
             if (targetPiece.pieceType == PieceType.Shogun)
             {
                 winner = currentPlayer;
-                Debug.Log($"Spieler {winner} GEWINNT! Shogun geschlagen!");
                 DeselectPiece();
                 return;
             }
         }
 
-        // Range neu berechnen basierend auf neuem Feld
         int newInterpretedVal = GetInterpretedGridValue(move.to.row, move.to.column, currentPlayer);
         movingPiece.UpdateRange(newInterpretedVal, movingPiece.pieceType);
 
         DeselectPiece();
         turnCount++;
 
-        // Spieler wechseln
         int nextPlayer = currentPlayer == 1 ? 2 : 1;
-
-        // Prüfe Endgame-Bedingungen
+      
         int nextPlayerCount = GetPlayerPieceCount(nextPlayer);
 
-        // Army Depleted (< 3 Pieces)
-        if (nextPlayerCount < 3)
+        // Siegbedingung: Gegner hat nur noch Shogun + 1 Stein (oder weniger)
+        if (nextPlayerCount <= 2)
         {
             winner = currentPlayer;
-            Debug.Log($"Spieler {winner} GEWINNT! Armee des Gegners aufgerieben ({nextPlayerCount} Steine übrig)!");
+            Debug.Log($"Spieler {winner} GEWINNT! Gegner hat nur noch {nextPlayerCount} Steine (Shogun + max. 1 weiterer).");
             return;
         }
 
-        // Kein legaler Zug möglich?
+
         if (!HasLegalMoves(nextPlayer))
         {
             bool inCheck = IsPlayerInCheck(nextPlayer);
-            if (inCheck)
-            {
-                winner = currentPlayer;
-                Debug.Log($"Spieler {winner} GEWINNT! CHECKMATE!");
-            }
-            else
-            {
-                winner = currentPlayer;
-                Debug.Log($"Spieler {winner} GEWINNT! Gegner ist TRAPPED!");
-            }
+            winner = currentPlayer;
+
+            if (inCheck) Debug.Log($"Spieler {winner} GEWINNT! CHECKMATE!");
+            else Debug.Log($"Spieler {winner} GEWINNT! Gegner ist TRAPPED!");
+
             return;
         }
 
-        // Zug-Wechsel
+
         currentPlayer = nextPlayer;
-        Debug.Log($"Spieler {currentPlayer} ist dran. Turn: {turnCount}");
-        // Auto-KI nach P1-Zug
-        if (mode == GameMode.VsAI && currentPlayer == 2)
-        {
+
+        // KI startet nur hier, exakt einmal nach Spielerzug
+        if (mode == GameMode.VsAI && currentPlayer == aiPlayer && winner == 0 && !aiThinking)
             StartCoroutine(AIMakeMove());
+    }
+
+    // =======================
+    // AI (Minimax)
+    // =======================
+    private IEnumerator AIMakeMove()
+    {
+        aiThinking = true;
+        yield return new WaitForSeconds(aiDelay);
+
+        if (winner != 0) { aiThinking = false; yield break; }
+        if (currentPlayer != aiPlayer) { aiThinking = false; yield break; }
+
+        ValidMove best = GetBestMove(aiPlayer, aiDepth);
+        if (best != null) ExecuteMove(best);
+        else Debug.Log("KI: Kein Zug möglich");
+
+        aiThinking = false;
+    }
+
+    private ValidMove GetBestMove(int forPlayer, int depth)
+    {
+        int opponent = forPlayer == 1 ? 2 : 1;
+
+        int bestScore = int.MinValue;
+        ValidMove bestMove = null;
+
+        var myPieces = pieces.Values.Where(p => p != null && p.owner == forPlayer).ToList();
+
+        foreach (Piece p in myPieces)
+        {
+            var moves = CalculateValidMoves(p);
+            foreach (ValidMove m in moves)
+            {
+                SimulateMove(m);
+                int score = Minimax(opponent, depth - 1, int.MinValue, int.MaxValue, false, forPlayer);
+                UndoMove();
+
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    bestMove = m;
+                }
+            }
         }
 
+        return bestMove;
     }
 
-    public List<ValidMove> GetValidMoves()
+    private int Minimax(int playerToMove, int depth, int alpha, int beta, bool maximizing, int aiPerspective)
     {
-        return validMoves;
+        if (depth <= 0) return EvaluateBoard(aiPerspective);
+
+        int opponent = playerToMove == 1 ? 2 : 1;
+
+        var piecesToMove = pieces.Values.Where(p => p != null && p.owner == playerToMove).ToList();
+        bool hasMove = false;
+
+        if (maximizing)
+        {
+            int best = int.MinValue;
+
+            foreach (Piece p in piecesToMove)
+            {
+                var moves = CalculateValidMoves(p);
+                foreach (ValidMove m in moves)
+                {
+                    hasMove = true;
+
+                    SimulateMove(m);
+                    int score = Minimax(opponent, depth - 1, alpha, beta, false, aiPerspective);
+                    UndoMove();
+
+                    best = Mathf.Max(best, score);
+                    alpha = Mathf.Max(alpha, score);
+                    if (beta <= alpha) break;
+                }
+                if (beta <= alpha) break;
+            }
+
+            if (!hasMove) return EvaluateNoMoves(playerToMove, aiPerspective);
+            return best;
+        }
+        else
+        {
+            int best = int.MaxValue;
+
+            foreach (Piece p in piecesToMove)
+            {
+                var moves = CalculateValidMoves(p);
+                foreach (ValidMove m in moves)
+                {
+                    hasMove = true;
+
+                    SimulateMove(m);
+                    int score = Minimax(opponent, depth - 1, alpha, beta, true, aiPerspective);
+                    UndoMove();
+
+                    best = Mathf.Min(best, score);
+                    beta = Mathf.Min(beta, score);
+                    if (beta <= alpha) break;
+                }
+                if (beta <= alpha) break;
+            }
+
+            if (!hasMove) return EvaluateNoMoves(playerToMove, aiPerspective);
+            return best;
+        }
     }
 
-    public Piece GetSelectedPiece()
+    private int EvaluateNoMoves(int playerToMove, int aiPerspective)
     {
-        return selectedPiece;
+        // In deinem Game: keine Züge => Gegner gewinnt (egal ob Check oder Trapped)
+        // Wenn der Spieler ohne Züge die KI ist -> sehr schlecht, sonst sehr gut.
+        bool isBadForAI = (playerToMove == aiPerspective);
+        return isBadForAI ? -50000 : 50000;
     }
 
-    public int GetWinner()
+    private int EvaluateBoard(int aiPerspective)
     {
-        return winner;
+        int opp = aiPerspective == 1 ? 2 : 1;
+
+        // Terminal Checks (schnell)
+        if (GetShogun(aiPerspective) == null) return -100000;
+        if (GetShogun(opp) == null) return 100000;
+
+        int score = 0;
+
+        score += GetPlayerPieceCount(aiPerspective) * 200;
+        score -= GetPlayerPieceCount(opp) * 200;
+
+        if (IsPlayerInCheck(aiPerspective)) score -= 500;
+        if (IsPlayerInCheck(opp)) score += 500;
+
+        return score;
     }
 
-    public int GetCurrentPlayer()
+    // ---- Simulation (nur Daten, keine Transforms) ----
+    private void SimulateMove(ValidMove move)
     {
-        return currentPlayer;
+        Piece mover = GetPieceAt(move.from.row, move.from.column);
+        if (mover == null) return;
+
+        Piece captured = GetPieceAt(move.to.row, move.to.column);
+
+        SimStep step = new SimStep
+        {
+            mover = mover,
+            moverRowBefore = mover.row,
+            moverColBefore = mover.column,
+            moverRangeBefore = mover.range,
+
+            captured = captured,
+            capturedId = captured != null ? captured.id : null,
+            capturedRowBefore = captured != null ? captured.row : -1,
+            capturedColBefore = captured != null ? captured.column : -1,
+            capturedRangeBefore = captured != null ? captured.range : -1
+        };
+
+        simStack.Push(step);
+
+        if (captured != null)
+            pieces.Remove(captured.id);
+
+        mover.row = move.to.row;
+        mover.column = move.to.column;
+
+        int interpreted = GetInterpretedGridValue(mover.row, mover.column, mover.owner);
+        mover.range = CalcRange(interpreted, mover.pieceType);
     }
 
-    public int[,] GetGridValues()
+    private void UndoMove()
     {
-        return gridValues;
+        if (simStack.Count == 0) return;
+
+        SimStep step = simStack.Pop();
+
+        if (step.mover != null)
+        {
+            step.mover.row = step.moverRowBefore;
+            step.mover.column = step.moverColBefore;
+            step.mover.range = step.moverRangeBefore;
+        }
+
+        if (step.captured != null && !string.IsNullOrEmpty(step.capturedId))
+        {
+            step.captured.row = step.capturedRowBefore;
+            step.captured.column = step.capturedColBefore;
+            step.captured.range = step.capturedRangeBefore;
+
+            if (!pieces.ContainsKey(step.capturedId))
+                pieces.Add(step.capturedId, step.captured);
+        }
     }
 
-    public BoardRenderer GetBoardRenderer()
-    {
-        return boardRenderer;
-    }
+    // =======================
+    // Getters
+    // =======================
+    public List<ValidMove> GetValidMoves() => validMoves;
+    public Piece GetSelectedPiece() => selectedPiece;
+    public int GetWinner() => winner;
+    public int GetCurrentPlayer() => currentPlayer;
+    public int[,] GetGridValues() => gridValues;
+    public BoardRenderer GetBoardRenderer() => boardRenderer;
 }
