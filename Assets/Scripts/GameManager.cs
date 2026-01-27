@@ -62,6 +62,7 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
+        mode = GameSettings.SelectedMode;   // Wert aus Menü übernehmen
         InitBoard();
         PrintBoardToConsole();
         SpawnStartPieces();
