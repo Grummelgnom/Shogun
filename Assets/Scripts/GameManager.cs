@@ -1,6 +1,7 @@
-﻿using UnityEngine;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 // Enum für die Piece-Typen (Soldat oder Shogun)
 public enum PieceType
@@ -18,6 +19,8 @@ public class GameManager : MonoBehaviour
     public GameObject p1ShogunPrefab;
     public GameObject p2NormalPrefab;
     public GameObject p2ShogunPrefab;
+    public enum GameMode { TwoPlayer, VsAI }
+    public GameMode mode = GameMode.TwoPlayer;  // Inspector-Default
 
     public BoardRenderer boardRenderer;
 
@@ -661,6 +664,13 @@ public class GameManager : MonoBehaviour
 
     public void OnTileClicked(int row, int column)
     {
+        // KI-Check: VsAI && KI dran (Player 2) → Auto-Zug
+        if (mode == GameMode.VsAI && currentPlayer == 2)
+        {
+            StartCoroutine(AIMakeMove());  // Warte 0.5s, dann KI-Zug
+            return;
+        }
+
         if (winner != 0)
             return;  // Spiel vorbei
 
@@ -697,6 +707,26 @@ public class GameManager : MonoBehaviour
             }
         }
     }
+    private IEnumerator AIMakeMove()
+    {
+        yield return new WaitForSeconds(0.5f);
+
+        // FIX: .Values.ToList() → Kopie, keine Modifikation!
+        var kiPieces = pieces.Values.ToList().Where(p => p != null && p.owner == 2).ToList();
+
+        foreach (Piece p in kiPieces)
+        {
+            var moves = CalculateValidMoves(p);
+            if (moves.Count > 0)
+            {
+                ExecuteMove(moves[0]);
+                yield break;
+            }
+        }
+        Debug.Log("KI: Kein Zug möglich");
+    }
+
+
 
     public void SelectPiece(Piece piece)
     {
@@ -798,6 +828,12 @@ public class GameManager : MonoBehaviour
         // Zug-Wechsel
         currentPlayer = nextPlayer;
         Debug.Log($"Spieler {currentPlayer} ist dran. Turn: {turnCount}");
+        // Auto-KI nach P1-Zug
+        if (mode == GameMode.VsAI && currentPlayer == 2)
+        {
+            StartCoroutine(AIMakeMove());
+        }
+
     }
 
     public List<ValidMove> GetValidMoves()
