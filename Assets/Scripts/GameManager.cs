@@ -172,22 +172,22 @@ public class GameManager : MonoBehaviour
 
         int shogunColumn = 4;
 
-        // Spieler 1 (oben, Reihe 0)
+        // Spieler 2 (oben, Reihe 0)
         for (int c = 0; c < columns; c++)
         {
             if (c == shogunColumn)
-                SpawnP1Shogun(0, c);
+                SpawnP2Shogun(0, c);
             else
-                SpawnP1Normal(0, c);
+                SpawnP2Normal(0, c);
         }
 
-        // Spieler 2 (unten, Reihe 7)
+        // Spieler 1 (unten, Reihe 7)
         for (int c = 0; c < columns; c++)
         {
             if (c == shogunColumn)
-                SpawnP2Shogun(7, c);
+                SpawnP1Shogun(7, c);
             else
-                SpawnP2Normal(7, c);
+                SpawnP1Normal(7, c);
         }
     }
 

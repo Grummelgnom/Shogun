@@ -94,22 +94,22 @@ public class BoardRenderer : MonoBehaviour
                 // Wert direkt aus dem Board an dieser Position [r, c] holen.
                 int value = gameManager.board[r, c];
 
-                // SpriteRenderer suchen, um optional Farbe zu setzen.
-                SpriteRenderer sr = tile.GetComponent<SpriteRenderer>();
-                if (sr != null)
-                {
-                    // Einfache Visualisierung:
-                    // Wert 4 → rot (starke Magneten), sonst grau (schwache/keine Magneten).
-                    if (value == 4)
-                        sr.color = Color.red;
-                    else
-                        sr.color = Color.gray;
-                    sr.tag = value == 4 ? "red" : "gray";
-                }
-                else
-                {
-                    Debug.LogWarning("BoardRenderer: Tile-Prefab hat keinen SpriteRenderer!");
-                }
+                //// SpriteRenderer suchen, um optional Farbe zu setzen.
+                //SpriteRenderer sr = tile.GetComponent<SpriteRenderer>();
+                //if (sr != null)
+                //{
+                //    // Einfache Visualisierung:
+                //    // Wert 4 → rot (starke Magneten), sonst grau (schwache/keine Magneten).
+                //    if (value == 4)
+                //        sr.color = Color.red;
+                //    else
+                //        sr.color = Color.gray;
+                //    sr.tag = value == 4 ? "red" : "gray";
+                //}
+                //else
+                //{
+                //    Debug.LogWarning("BoardRenderer: Tile-Prefab hat keinen SpriteRenderer!");
+                //}
             }
         }
     }
@@ -169,7 +169,7 @@ public class BoardRenderer : MonoBehaviour
                 if (sr.tag == "red")
                     sr.color = Color.red;
                 else
-                    sr.color = Color.gray;
+                    sr.color = Color.white;
             }
         }
         highlightedTiles.Clear();
