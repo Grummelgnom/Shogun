@@ -1,49 +1,64 @@
-﻿using System.Collections;
+﻿using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
 // Enum für die Piece-Typen (Soldat oder Shogun)
 public enum PieceType
 {
-    Soldier,
-    Shogun
+    Soldier,    // Normaler Soldat/Bauer
+    Shogun      // Der Anführer
+}
+
+public enum GameMode
+{
+    TwoPlayer,
+    VsAI
 }
 
 public class GameManager : MonoBehaviour
 {
+    [Header("Board")]
     public int rows = 8;
     public int columns = 8;
 
+    [Header("Prefabs")]
     public GameObject p1NormalPrefab;
     public GameObject p1ShogunPrefab;
     public GameObject p2NormalPrefab;
     public GameObject p2ShogunPrefab;
 
-    public enum GameMode { TwoPlayer, VsAI }
-    public GameMode mode = GameMode.TwoPlayer;
-
+    [Header("Refs")]
     public BoardRenderer boardRenderer;
 
-    public int[,] board = new int[8, 8];
+    // Magnetfeld-Werte (feste 8x8 Grid)
     public int[,] gridValues = new int[8, 8];
 
+    // board-Array (aktuell gleich gridValues)
+    public int[,] board = new int[8, 8];
+
+    // Alle Pieces in der Szene
     private Dictionary<string, Piece> pieces = new Dictionary<string, Piece>();
 
-    public int currentPlayer = 1;
+    [Header("Game State")]
+    public GameMode mode = GameMode.TwoPlayer;
+    public int currentPlayer = 1; // 1 = P1, 2 = P2
     private Piece selectedPiece = null;
     private List<ValidMove> validMoves = new List<ValidMove>();
     private int winner = 0;
     private int turnCount = 0;
 
-    // ========= AI SETTINGS =========
-    [Header("AI")]
-    public int aiPlayer = 2;
-    [Range(1, 5)] public int aiDepth = 3;      // Depth 3 = sehr viel weniger Freeze-Risiko
-    public float aiDelay = 0.35f;              // Optik: "KI denkt nach"
-    private bool aiThinking = false;
+    [Header("AI (single settings apply to both AIs)")]
+    public int aiPlayer = 2;                 // in VsAI: welcher Player ist die KI
+    [Range(1, 8)] public int aiDepth = 3;    // wird aus GameSettings gesetzt
+    public float aiDelaySeconds = 0.35f;     // wird aus GameSettings gesetzt
+    private bool aiIsThinking = false;
 
-    // ========= MINIMAX SIM STACK (Undo Fix) =========
+    [Header("AI vs AI")]
+    public bool aiVsAi = false;              // aus GameSettings.AIVsAI
+    public int aiVsAiMaxTurns = 400;         // Notbremse
+
+    // ===== Simulation Undo Stack (Fix) =====
     private struct SimStep
     {
         public Piece mover;
@@ -51,7 +66,7 @@ public class GameManager : MonoBehaviour
         public int moverColBefore;
         public int moverRangeBefore;
 
-        public Piece captured;       // null wenn kein Schlag
+        public Piece captured;        // null wenn kein Schlag
         public string capturedId;
         public int capturedRowBefore;
         public int capturedColBefore;
@@ -62,15 +77,46 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        mode = GameSettings.SelectedMode;   // Wert aus Menü übernehmen
         InitBoard();
         PrintBoardToConsole();
         SpawnStartPieces();
+
+        // Menü-Settings übernehmen (wenn GameSettings existiert)
+        ApplyGameSettingsFromMenu();
+
+        // Wenn AI vs AI: sofort starten
+        if (mode == GameMode.VsAI && aiVsAi && winner == 0 && !aiIsThinking)
+            StartCoroutine(AIMakeMove());
     }
 
-    // =======================
-    // Board Init
-    // =======================
+    private void ApplyGameSettingsFromMenu()
+    {
+        // Falls du GameSettings noch nicht im Projekt hast, kannst du diesen Block auskommentieren.
+        // (Wir nutzen das, um Stärke/Tempo global für beide KIs zu setzen.)
+        mode = GameSettings.SelectedMode;
+        aiVsAi = GameSettings.AIVsAI;
+
+        int strength = GameSettings.Clamp1To4(GameSettings.AIStrength);
+        int tempo = GameSettings.Clamp1To4(GameSettings.AITempo);
+
+        // Stärke 1..4 -> Depth konservativ (Freeze-Schutz)
+        // 1=>2, 2=>3, 3=>4, 4=>5
+        aiDepth = 1 + strength;
+
+        // Tempo 1..4 -> Delay (1 langsam, 4 schnell)
+        // 1=>0.60s, 2=>0.40s, 3=>0.25s, 4=>0.10s
+        switch (tempo)
+        {
+            case 1: aiDelaySeconds = 0.60f; break;
+            case 2: aiDelaySeconds = 0.40f; break;
+            case 3: aiDelaySeconds = 0.25f; break;
+            case 4: aiDelaySeconds = 0.10f; break;
+        }
+    }
+
+    // =============================
+    // Board Init / Debug
+    // =============================
     void InitBoard()
     {
         int bestScore = int.MaxValue;
@@ -107,13 +153,20 @@ public class GameManager : MonoBehaviour
         for (int i = values.Count - 1; i > 0; i--)
         {
             int j = Random.Range(0, i + 1);
-            (values[i], values[j]) = (values[j], values[i]);
+            int temp = values[i];
+            values[i] = values[j];
+            values[j] = temp;
         }
 
         int index = 0;
         for (int r = 0; r < 8; r++)
+        {
             for (int c = 0; c < 8; c++)
-                grid[r, c] = values[index++];
+            {
+                grid[r, c] = values[index];
+                index++;
+            }
+        }
 
         return grid;
     }
@@ -121,7 +174,6 @@ public class GameManager : MonoBehaviour
     int CountOrthogonalPairs(int[,] grid)
     {
         int pairCount = 0;
-
         for (int r = 0; r < 8; r++)
         {
             for (int c = 0; c < 8; c++)
@@ -131,7 +183,6 @@ public class GameManager : MonoBehaviour
                 if (r < 7 && grid[r + 1, c] == value) pairCount++;
             }
         }
-
         return pairCount;
     }
 
@@ -148,9 +199,9 @@ public class GameManager : MonoBehaviour
         Debug.Log(output);
     }
 
-    // =======================
+    // =============================
     // Spawn
-    // =======================
+    // =============================
     void SpawnStartPieces()
     {
         if (boardRenderer == null)
@@ -219,7 +270,7 @@ public class GameManager : MonoBehaviour
             piece.column = column;
             piece.gameManager = this;
             piece.UpdateRange(GetInterpretedGridValue(row, column, 1), PieceType.Shogun);
-            piece.id = $"p1-shogun";
+            piece.id = "p1-shogun";
             pieces[piece.id] = piece;
         }
     }
@@ -261,14 +312,14 @@ public class GameManager : MonoBehaviour
             piece.column = column;
             piece.gameManager = this;
             piece.UpdateRange(GetInterpretedGridValue(row, column, 2), PieceType.Shogun);
-            piece.id = $"p2-shogun";
+            piece.id = "p2-shogun";
             pieces[piece.id] = piece;
         }
     }
 
-    // =======================
-    // Core Helpers
-    // =======================
+    // =============================
+    // Core helpers
+    // =============================
     public int GetInterpretedGridValue(int row, int column, int owner)
     {
         int rawVal = gridValues[row, column];
@@ -306,13 +357,12 @@ public class GameManager : MonoBehaviour
         return null;
     }
 
-    // =======================
-    // Moves (deine Logik)
-    // =======================
+    // =============================
+    // Move generation
+    // =============================
     public List<ValidMove> CalculateRawMoves(Piece piece)
     {
         List<ValidMove> moves = new List<ValidMove>();
-
         int range = piece.range;
         if (range <= 0) return moves;
 
@@ -324,6 +374,7 @@ public class GameManager : MonoBehaviour
             new int[] { 0, -1 }
         };
 
+        // Gerade Züge: volle Range
         foreach (var dir in directions)
         {
             bool blocked = false;
@@ -345,6 +396,7 @@ public class GameManager : MonoBehaviour
 
                 if (step == range)
                 {
+                    // letzter Schritt: leer oder Gegner
                     if (stepPiece != null && stepPiece.owner == piece.owner)
                     {
                         blocked = true;
@@ -355,6 +407,7 @@ public class GameManager : MonoBehaviour
                 }
                 else
                 {
+                    // Zwischenschritte müssen leer sein
                     if (stepPiece != null)
                     {
                         blocked = true;
@@ -370,6 +423,7 @@ public class GameManager : MonoBehaviour
             }
         }
 
+        // L-Züge: 90° Turn
         for (int leg1Length = 1; leg1Length < range; leg1Length++)
         {
             int leg2Length = range - leg1Length;
@@ -377,7 +431,6 @@ public class GameManager : MonoBehaviour
             for (int dirIndex = 0; dirIndex < 4; dirIndex++)
             {
                 int[] firstDir = directions[dirIndex];
-
                 int[] leftDir = directions[(dirIndex + 3) % 4];
                 int[] rightDir = directions[(dirIndex + 1) % 4];
 
@@ -455,6 +508,7 @@ public class GameManager : MonoBehaviour
         return moves;
     }
 
+    // Berechnet legale Züge (ohne in Check geraten)
     public List<ValidMove> CalculateValidMoves(Piece piece)
     {
         List<ValidMove> rawMoves = CalculateRawMoves(piece);
@@ -478,12 +532,13 @@ public class GameManager : MonoBehaviour
             piece.row = move.to.row;
             piece.column = move.to.column;
 
-            // Range temporär updaten (sonst kann Check-Berechnung in Folgezügen schief werden)
+            // Range temporär korrekt setzen, weil sonst Folgeprüfungen falsch sein können
             int interpreted = GetInterpretedGridValue(piece.row, piece.column, piece.owner);
             piece.range = CalcRange(interpreted, piece.pieceType);
 
             bool inCheck = IsPlayerInCheck(piece.owner);
 
+            // UNDO
             piece.row = oldRow;
             piece.column = oldCol;
             piece.range = oldRange;
@@ -491,7 +546,8 @@ public class GameManager : MonoBehaviour
             if (removedPiece && targetPiece != null)
                 pieces[targetPiece.id] = targetPiece;
 
-            if (!inCheck) legalMoves.Add(move);
+            if (!inCheck)
+                legalMoves.Add(move);
         }
 
         return legalMoves;
@@ -500,7 +556,6 @@ public class GameManager : MonoBehaviour
     public List<Position> BuildPath(int fromRow, int fromCol, int toRow, int toCol)
     {
         List<Position> path = new List<Position>();
-
         int dr = toRow - fromRow;
         int dc = toCol - fromCol;
 
@@ -557,9 +612,9 @@ public class GameManager : MonoBehaviour
         return path;
     }
 
-    // =======================
-    // Threat / Check / Legal
-    // =======================
+    // =============================
+    // Check / Threat
+    // =============================
     public HashSet<string> GetThreatenedCells(int attackingPlayer)
     {
         HashSet<string> threats = new HashSet<string>();
@@ -570,6 +625,8 @@ public class GameManager : MonoBehaviour
 
         foreach (Piece piece in attackingPieces)
         {
+            if (piece == null) continue;
+
             List<ValidMove> moves = CalculateRawMoves(piece);
             foreach (ValidMove move in moves)
                 threats.Add($"{move.to.row},{move.to.column}");
@@ -585,7 +642,6 @@ public class GameManager : MonoBehaviour
 
         int opponent = player == 1 ? 2 : 1;
         HashSet<string> threats = GetThreatenedCells(opponent);
-
         return threats.Contains($"{shogun.row},{shogun.column}");
     }
 
@@ -596,21 +652,26 @@ public class GameManager : MonoBehaviour
             if (p != null && p.owner == player) playerPieces.Add(p);
 
         foreach (Piece piece in playerPieces)
+        {
+            if (piece == null) continue;
             if (CalculateValidMoves(piece).Count > 0) return true;
+        }
 
         return false;
     }
 
-    // =======================
+    // =============================
     // UI / Interaction
-    // =======================
+    // =============================
     public void OnTileClicked(int row, int column)
     {
         if (winner != 0) return;
 
-        // Wichtig: NICHT hier KI starten – sonst startet sie bei jedem Klick erneut und kann "freezen"
-        if (mode == GameMode.VsAI && currentPlayer == aiPlayer)
-            return;
+        // In AI-vs-AI ignorieren wir alle Klicks komplett
+        if (mode == GameMode.VsAI && aiVsAi) return;
+
+        // In VsAI: wenn KI dran ist, Klicks ignorieren
+        if (mode == GameMode.VsAI && currentPlayer == aiPlayer) return;
 
         Piece clickedPiece = GetPieceAt(row, column);
 
@@ -640,6 +701,7 @@ public class GameManager : MonoBehaviour
 
         selectedPiece = piece;
         selectedPiece.SetSelected(true);
+
         validMoves = CalculateValidMoves(piece);
         boardRenderer.HighlightValidMoves(validMoves);
     }
@@ -654,6 +716,8 @@ public class GameManager : MonoBehaviour
 
     public void ExecuteMove(ValidMove move)
     {
+        if (winner != 0) return;
+
         Piece movingPiece = GetPieceAt(move.from.row, move.from.column);
         Piece targetPiece = GetPieceAt(move.to.row, move.to.column);
 
@@ -674,6 +738,7 @@ public class GameManager : MonoBehaviour
             if (targetPiece.pieceType == PieceType.Shogun)
             {
                 winner = currentPlayer;
+                Debug.Log($"Spieler {winner} GEWINNT! Shogun geschlagen!");
                 DeselectPiece();
                 return;
             }
@@ -686,54 +751,69 @@ public class GameManager : MonoBehaviour
         turnCount++;
 
         int nextPlayer = currentPlayer == 1 ? 2 : 1;
-      
-        int nextPlayerCount = GetPlayerPieceCount(nextPlayer);
 
-        // Siegbedingung: Gegner hat nur noch Shogun + 1 Stein (oder weniger)
-        if (nextPlayerCount <= 2)
+        // Notbremse für AI vs AI
+        if (mode == GameMode.VsAI && aiVsAi && turnCount >= aiVsAiMaxTurns)
         {
-            winner = currentPlayer;
-            Debug.Log($"Spieler {winner} GEWINNT! Gegner hat nur noch {nextPlayerCount} Steine (Shogun + max. 1 weiterer).");
+            winner = nextPlayer; // willkürlich, damit es endet
+            Debug.LogWarning($"AI-vs-AI Notbremse: max turns {aiVsAiMaxTurns} erreicht.");
             return;
         }
 
+        int nextPlayerCount = GetPlayerPieceCount(nextPlayer);
+
+        if (nextPlayerCount < 3)
+        {
+            winner = currentPlayer;
+            Debug.Log($"Spieler {winner} GEWINNT! Armee des Gegners aufgerieben ({nextPlayerCount} Steine übrig)!");
+            return;
+        }
 
         if (!HasLegalMoves(nextPlayer))
         {
             bool inCheck = IsPlayerInCheck(nextPlayer);
             winner = currentPlayer;
-
-            if (inCheck) Debug.Log($"Spieler {winner} GEWINNT! CHECKMATE!");
-            else Debug.Log($"Spieler {winner} GEWINNT! Gegner ist TRAPPED!");
-
+            Debug.Log(inCheck ? $"Spieler {winner} GEWINNT! CHECKMATE!" : $"Spieler {winner} GEWINNT! Gegner ist TRAPPED!");
             return;
         }
 
-
         currentPlayer = nextPlayer;
 
-        // KI startet nur hier, exakt einmal nach Spielerzug
-        if (mode == GameMode.VsAI && currentPlayer == aiPlayer && winner == 0 && !aiThinking)
-            StartCoroutine(AIMakeMove());
+        // Auto-KI Trigger:
+        // - VsAI: wenn currentPlayer == aiPlayer
+        // - AIvsAI: immer (solange winner==0)
+        if (mode == GameMode.VsAI && winner == 0 && !aiIsThinking)
+        {
+            bool aiTurn = aiVsAi || (currentPlayer == aiPlayer);
+            if (aiTurn) StartCoroutine(AIMakeMove());
+        }
     }
 
-    // =======================
-    // AI (Minimax)
-    // =======================
+    // =============================
+    // AI
+    // =============================
     private IEnumerator AIMakeMove()
     {
-        aiThinking = true;
-        yield return new WaitForSeconds(aiDelay);
+        aiIsThinking = true;
+        yield return new WaitForSeconds(aiDelaySeconds);
 
-        if (winner != 0) { aiThinking = false; yield break; }
-        if (currentPlayer != aiPlayer) { aiThinking = false; yield break; }
+        if (winner != 0)
+        {
+            aiIsThinking = false;
+            yield break;
+        }
 
-        ValidMove best = GetBestMove(aiPlayer, aiDepth);
-        if (best != null) ExecuteMove(best);
-        else Debug.Log("KI: Kein Zug möglich");
+        int aiToMove = currentPlayer;
+        ValidMove best = GetBestMove(aiToMove, aiDepth);
 
-        aiThinking = false;
+        aiIsThinking = false;                 // << WICHTIG: VOR ExecuteMove
+
+        if (best != null)
+            ExecuteMove(best);
+        else
+            Debug.LogWarning("KI: Kein Zug gefunden.");
     }
+
 
     private ValidMove GetBestMove(int forPlayer, int depth)
     {
@@ -742,14 +822,13 @@ public class GameManager : MonoBehaviour
         int bestScore = int.MinValue;
         ValidMove bestMove = null;
 
-        var myPieces = pieces.Values.Where(p => p != null && p.owner == forPlayer).ToList();
-
+        List<Piece> myPieces = pieces.Values.Where(p => p != null && p.owner == forPlayer).ToList();
         foreach (Piece p in myPieces)
         {
-            var moves = CalculateValidMoves(p);
+            List<ValidMove> moves = CalculateValidMoves(p);
             foreach (ValidMove m in moves)
             {
-                SimulateMove(m);
+                SimulateMove(m, forPlayer);
                 int score = Minimax(opponent, depth - 1, int.MinValue, int.MaxValue, false, forPlayer);
                 UndoMove();
 
@@ -766,12 +845,14 @@ public class GameManager : MonoBehaviour
 
     private int Minimax(int playerToMove, int depth, int alpha, int beta, bool maximizing, int aiPerspective)
     {
+        int terminalScore;
+        if (IsTerminal(aiPerspective, out terminalScore)) return terminalScore;
         if (depth <= 0) return EvaluateBoard(aiPerspective);
 
         int opponent = playerToMove == 1 ? 2 : 1;
 
-        var piecesToMove = pieces.Values.Where(p => p != null && p.owner == playerToMove).ToList();
-        bool hasMove = false;
+        List<Piece> piecesToMove = pieces.Values.Where(p => p != null && p.owner == playerToMove).ToList();
+        bool hasAnyMove = false;
 
         if (maximizing)
         {
@@ -779,12 +860,11 @@ public class GameManager : MonoBehaviour
 
             foreach (Piece p in piecesToMove)
             {
-                var moves = CalculateValidMoves(p);
+                List<ValidMove> moves = CalculateValidMoves(p);
                 foreach (ValidMove m in moves)
                 {
-                    hasMove = true;
-
-                    SimulateMove(m);
+                    hasAnyMove = true;
+                    SimulateMove(m, playerToMove);
                     int score = Minimax(opponent, depth - 1, alpha, beta, false, aiPerspective);
                     UndoMove();
 
@@ -795,7 +875,7 @@ public class GameManager : MonoBehaviour
                 if (beta <= alpha) break;
             }
 
-            if (!hasMove) return EvaluateNoMoves(playerToMove, aiPerspective);
+            if (!hasAnyMove) return EvaluateNoMoves(playerToMove, aiPerspective);
             return best;
         }
         else
@@ -804,12 +884,11 @@ public class GameManager : MonoBehaviour
 
             foreach (Piece p in piecesToMove)
             {
-                var moves = CalculateValidMoves(p);
+                List<ValidMove> moves = CalculateValidMoves(p);
                 foreach (ValidMove m in moves)
                 {
-                    hasMove = true;
-
-                    SimulateMove(m);
+                    hasAnyMove = true;
+                    SimulateMove(m, playerToMove);
                     int score = Minimax(opponent, depth - 1, alpha, beta, true, aiPerspective);
                     UndoMove();
 
@@ -820,26 +899,36 @@ public class GameManager : MonoBehaviour
                 if (beta <= alpha) break;
             }
 
-            if (!hasMove) return EvaluateNoMoves(playerToMove, aiPerspective);
+            if (!hasAnyMove) return EvaluateNoMoves(playerToMove, aiPerspective);
             return best;
         }
     }
 
+    private bool IsTerminal(int aiPerspective, out int score)
+    {
+        score = 0;
+        int opp = aiPerspective == 1 ? 2 : 1;
+
+        if (GetShogun(aiPerspective) == null) { score = -100000; return true; }
+        if (GetShogun(opp) == null) { score = 100000; return true; }
+
+        if (GetPlayerPieceCount(aiPerspective) < 3) { score = -90000; return true; }
+        if (GetPlayerPieceCount(opp) < 3) { score = 90000; return true; }
+
+        return false;
+    }
+
     private int EvaluateNoMoves(int playerToMove, int aiPerspective)
     {
-        // In deinem Game: keine Züge => Gegner gewinnt (egal ob Check oder Trapped)
-        // Wenn der Spieler ohne Züge die KI ist -> sehr schlecht, sonst sehr gut.
-        bool isBadForAI = (playerToMove == aiPerspective);
-        return isBadForAI ? -50000 : 50000;
+        // In deinem Spiel gewinnt der Gegner sowohl bei Checkmate als auch Trapped
+        bool inCheck = IsPlayerInCheck(playerToMove);
+        int sign = (playerToMove == aiPerspective) ? -1 : 1;
+        return sign * (inCheck ? 80000 : 70000);
     }
 
     private int EvaluateBoard(int aiPerspective)
     {
         int opp = aiPerspective == 1 ? 2 : 1;
-
-        // Terminal Checks (schnell)
-        if (GetShogun(aiPerspective) == null) return -100000;
-        if (GetShogun(opp) == null) return 100000;
 
         int score = 0;
 
@@ -852,8 +941,8 @@ public class GameManager : MonoBehaviour
         return score;
     }
 
-    // ---- Simulation (nur Daten, keine Transforms) ----
-    private void SimulateMove(ValidMove move)
+    // ---- Simulation nur Daten (keine Transforms) ----
+    private void SimulateMove(ValidMove move, int player)
     {
         Piece mover = GetPieceAt(move.from.row, move.from.column);
         if (mover == null) return;
@@ -910,9 +999,9 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // =======================
-    // Getters
-    // =======================
+    // =============================
+    // Public getters
+    // =============================
     public List<ValidMove> GetValidMoves() => validMoves;
     public Piece GetSelectedPiece() => selectedPiece;
     public int GetWinner() => winner;

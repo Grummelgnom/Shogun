@@ -456,12 +456,14 @@ MonoBehaviour:
   p1ShogunPrefab: {fileID: 5771174678213792516, guid: 204853396e7be4943aae2d107a8ef44a, type: 3}
   p2NormalPrefab: {fileID: 8225145804736333462, guid: 504e65664ee86e94f810d753aab5ab77, type: 3}
   p2ShogunPrefab: {fileID: 5484922906228182161, guid: 50c5d93d2edadb241983957406144465, type: 3}
-  mode: 1
   boardRenderer: {fileID: 448284584}
+  mode: 1
   currentPlayer: 1
   aiPlayer: 2
   aiDepth: 3
-  aiDelay: 0.35
+  aiDelaySeconds: 0.25
+  aiVsAi: 0
+  aiVsAiMaxTurns: 400
 --- !u!1 &448284583
 GameObject:
   m_ObjectHideFlags: 0
@@ -557,7 +559,7 @@ MonoBehaviour:
   m_fontColor32:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+  m_fontColor: {r: 1, g: 0.07075471, b: 0.07075471, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:

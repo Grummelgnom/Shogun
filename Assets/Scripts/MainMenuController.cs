@@ -1,28 +1,84 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+using TMPro;
+using static GameManager;
 
 public class MainMenuController : MonoBehaviour
 {
-    // Genau so in Unity geschrieben: "MainScene"
-    [SerializeField] private string gameSceneName = "MainScene";
+    [Header("UI References (assign in Inspector)")]
+    [SerializeField] private TMP_Dropdown strengthDropdown;
+    [SerializeField] private TMP_Dropdown tempoDropdown;
 
-    public void StartTwoPlayer()
+
+    [Header("Scene Names")]
+    public string mainSceneName = "MainScene";
+
+    private void Start()
     {
-        GameSettings.SelectedMode = GameManager.GameMode.TwoPlayer;
-        SceneManager.LoadScene(gameSceneName);
+        SetupDropdown(strengthDropdown);
+        SetupDropdown(tempoDropdown);
+
+        // Default selections reflect current GameSettings
+        if (strengthDropdown != null) strengthDropdown.value = Mathf.Clamp(GameSettings.AIStrength, 1, 4) - 1;
+        if (tempoDropdown != null) tempoDropdown.value = Mathf.Clamp(GameSettings.AITempo, 1, 4) - 1;
+
+        ApplyDropdownsToSettings();
     }
 
-    public void StartVsAI()
+    private void SetupDropdown(TMP_Dropdown dd)
     {
-        GameSettings.SelectedMode = GameManager.GameMode.VsAI;
-        SceneManager.LoadScene(gameSceneName);
+        if (dd == null) return;
+
+        dd.ClearOptions();
+        dd.AddOptions(new List<string> { "1", "2", "3" }); // Beispiel
+        dd.onValueChanged.AddListener(_ => ApplyDropdownsToSettings());
+    }
+
+
+    private void ApplyDropdownsToSettings()
+    {
+        if (strengthDropdown != null)
+            GameSettings.AIStrength = GameSettings.Clamp1To4(strengthDropdown.value + 1);
+
+        if (tempoDropdown != null)
+            GameSettings.AITempo = GameSettings.Clamp1To4(tempoDropdown.value + 1);
+    }
+
+    // --- Buttons (wire these up in the Button OnClick) ---
+
+    public void PlayTwoPlayer()
+    {
+        ApplyDropdownsToSettings();
+        GameSettings.SelectedMode = GameMode.TwoPlayer;
+        GameSettings.AIVsAI = false;
+        SceneManager.LoadScene(mainSceneName);
+    }
+
+    public void PlayVsAI()
+    {
+        ApplyDropdownsToSettings();
+        GameSettings.SelectedMode = GameMode.VsAI;
+        GameSettings.AIVsAI = false;
+        SceneManager.LoadScene(mainSceneName);
+    }
+
+    public void PlayAIVsAI()
+    {
+        ApplyDropdownsToSettings();
+        GameSettings.SelectedMode = GameMode.VsAI; // Option A: reuse VsAI
+        GameSettings.AIVsAI = true;
+        SceneManager.LoadScene(mainSceneName);
     }
     public void QuitGame()
     {
-    #if UNITY_EDITOR
+#if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
-    #else
+#else
     Application.Quit();
-    #endif
+#endif
     }
+
+
 }
