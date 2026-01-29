@@ -303,6 +303,22 @@ PrefabInstance:
       propertyPath: boardRenderer
       value: 
       objectReference: {fileID: 126829819}
+    - target: {fileID: 1664094895183157829, guid: 5ea23b5dacf322e4bb26178e1cebd68b, type: 3}
+      propertyPath: p1NormalPrefab
+      value: 
+      objectReference: {fileID: 3652946256224794470, guid: aa1825401f424c841b15a73145bdd04b, type: 3}
+    - target: {fileID: 1664094895183157829, guid: 5ea23b5dacf322e4bb26178e1cebd68b, type: 3}
+      propertyPath: p1ShogunPrefab
+      value: 
+      objectReference: {fileID: 3652946256224794470, guid: b7a418774fe900944ad8d3335ef1a0ea, type: 3}
+    - target: {fileID: 1664094895183157829, guid: 5ea23b5dacf322e4bb26178e1cebd68b, type: 3}
+      propertyPath: p2NormalPrefab
+      value: 
+      objectReference: {fileID: 3652946256224794470, guid: 93cdcbc835d54734ea3b68e13b3adf1b, type: 3}
+    - target: {fileID: 1664094895183157829, guid: 5ea23b5dacf322e4bb26178e1cebd68b, type: 3}
+      propertyPath: p2ShogunPrefab
+      value: 
+      objectReference: {fileID: 3652946256224794470, guid: ee5ba5f58aa0e7243bf0109c748290c6, type: 3}
     - target: {fileID: 2329405821237432308, guid: 5ea23b5dacf322e4bb26178e1cebd68b, type: 3}
       propertyPath: m_Name
       value: GameManager
