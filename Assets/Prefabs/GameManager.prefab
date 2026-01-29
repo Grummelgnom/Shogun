@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2329405821237432308
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6469902932556144579}
+  - component: {fileID: 1664094895183157829}
+  m_Layer: 0
+  m_Name: GameManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6469902932556144579
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2329405821237432308}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1664094895183157829
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2329405821237432308}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9884c445c2e33504faa7c1fe356c857d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rows: 8
+  columns: 8
+  p1NormalPrefab: {fileID: 7367992893990249812, guid: d3b54f08a3aa8774fb5c1eaa5917b11b, type: 3}
+  p1ShogunPrefab: {fileID: 5771174678213792516, guid: 204853396e7be4943aae2d107a8ef44a, type: 3}
+  p2NormalPrefab: {fileID: 8225145804736333462, guid: 504e65664ee86e94f810d753aab5ab77, type: 3}
+  p2ShogunPrefab: {fileID: 5484922906228182161, guid: 50c5d93d2edadb241983957406144465, type: 3}
+  boardRenderer: {fileID: 0}
+  mode: 1
+  currentPlayer: 1
+  aiPlayer: 2
+  aiDepth: 3
+  aiDelaySeconds: 0.25
+  aiVsAi: 0
+  aiVsAiMaxTurns: 400
