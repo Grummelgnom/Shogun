@@ -13,7 +13,7 @@ public class MainMenuController : MonoBehaviour
 
 
     [Header("Scene Names")]
-    public string mainSceneName = "MainScene";
+    public string mainSceneName = "Game";
 
     private void Start()
     {
