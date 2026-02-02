@@ -13,16 +13,27 @@ public class Piece : MonoBehaviour
     private bool isSelected = false;
     private Color originalColor;
     private SpriteRenderer spriteRenderer;
+    private MeshRenderer meshRenderer;  // NEU: Für 3D
 
     // Neu: Text für Range-Anzeige
     private TextMesh rangeText;
 
     void Start()
     {
+        // Versuche erst SpriteRenderer (2D), dann MeshRenderer (3D)
         spriteRenderer = GetComponent<SpriteRenderer>();
         if (spriteRenderer != null)
         {
             originalColor = spriteRenderer.color;
+        }
+        else
+        {
+            // In 3D: MeshRenderer verwenden
+            meshRenderer = GetComponent<MeshRenderer>();
+            if (meshRenderer != null)
+            {
+                originalColor = meshRenderer.material.color;
+            }
         }
 
         // Range-Text erstellen
@@ -43,6 +54,7 @@ public class Piece : MonoBehaviour
 
         if (spriteRenderer != null)
         {
+            // 2D-Version
             if (isSelected)
             {
                 spriteRenderer.color = originalColor * 1.5f;
@@ -50,6 +62,18 @@ public class Piece : MonoBehaviour
             else
             {
                 spriteRenderer.color = originalColor;
+            }
+        }
+        else if (meshRenderer != null)
+        {
+            // 3D-Version
+            if (isSelected)
+            {
+                meshRenderer.material.color = originalColor * 1.5f;
+            }
+            else
+            {
+                meshRenderer.material.color = originalColor;
             }
         }
     }

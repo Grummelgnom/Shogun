@@ -1,23 +1,10 @@
 ﻿using System.Collections.Generic;
-using UnityEngine;  // Unity-Funktionen für GameObjects, Transform, Color, etc.
+using UnityEngine;
 
-// Dieses Script ist dafür zuständig, das Board aus dem GameManager
-// als sichtbare 2D-Kacheln in der Scene anzuzeigen.
-// Es liegt auf dem GameObject "BoardRenderer".
 public class BoardRenderer : MonoBehaviour
 {
-    // Referenz auf den GameManager in der Scene.
-    // Im Inspector ziehst du das GameObject "GameManager" hier hinein.
     public GameManager gameManager;
-
-    // Prefab einer einzelnen Kachel.
-    // Das ist ein GameObject mit einem SpriteRenderer (z.B. ein kleines Quadrat).
-    // Im Inspector ziehst du hier dein Tile-Prefab hinein.
     public GameObject tilePrefab;
-
-    // Abstand zwischen den Kacheln in Welt-Einheiten.
-    // 1f bedeutet: Jede Kachel liegt 1 Einheit auseinander.
-    // Du kannst den Wert im Inspector verändern, um das Grid größer/kleiner zu machen.
     public float tileSpacing = 1f;
 
     // Dictionary um Tiles zu speichern und später zu highlighten
@@ -26,63 +13,50 @@ public class BoardRenderer : MonoBehaviour
     // Speichern aktuell gehighlighteter Ziele
     private List<GameObject> highlightedTiles = new List<GameObject>();
 
+    // NEU: Speichern der Original-Farben pro Tile
+    private Dictionary<string, Color> originalTileColors = new Dictionary<string, Color>();
 
-    // Wird beim Start der Scene aufgerufen.
     void Start()
     {
-        // Prüfen, ob ein GameManager zugewiesen wurde.
         if (gameManager == null)
         {
             Debug.LogError("BoardRenderer: Kein GameManager zugewiesen! Bitte im Inspector setzen.");
-            return;  // Abbrechen, damit wir keinen Fehler produzieren.
+            return;
         }
 
-        // Prüfen, ob ein Tile-Prefab zugewiesen wurde.
         if (tilePrefab == null)
         {
             Debug.LogError("BoardRenderer: Kein tilePrefab zugewiesen! Bitte im Inspector setzen.");
             return;
         }
 
-        // Wenn alles da ist, bauen wir das visuelle Board.
         CreateBoardVisuals();
     }
 
-    // Erstellt für jedes Feld im Board eine sichtbare Kachel.
     void CreateBoardVisuals()
     {
-        // Board-Größe aus dem GameManager holen.
         int rows = gameManager.rows;
         int columns = gameManager.columns;
 
-        // Das Board ungefähr um die Weltmitte (0,0) zentrieren.
-        // Wir berechnen einen Offset, damit das Grid nicht oben-links anfängt,
-        // sondern in der Nähe des Ursprungs.
         float xOffset = -(columns - 1) * tileSpacing / 2f;
         float yOffset = -(rows - 1) * tileSpacing / 2f;
 
-        // Schleife über alle Reihen (von oben nach unten).
         for (int r = 0; r < rows; r++)
         {
-            // Schleife über alle Spalten (von links nach rechts).
             for (int c = 0; c < columns; c++)
             {
-                // Position dieser Kachel im Raum berechnen.
-                // Wichtig: Wir drehen hier die Reihenachse um (rows - 1 - r),
-                // damit Reihe 0 oben angezeigt wird, so wie im Konsolenbild.
                 float x = c * tileSpacing + xOffset;
                 float y = (rows - 1 - r) * tileSpacing + yOffset;
 
                 Vector3 tilePosition = new Vector3(x, y, 0f);
 
-                // Eine neue Kachel aus dem Prefab erzeugen.
                 GameObject tile = Instantiate(tilePrefab, tilePosition, Quaternion.identity);
-
-                // Kachel als Kind dieses BoardRenderers setzen,
-                // damit im Hierarchy-Fenster alles schön gruppiert ist.
                 tile.transform.parent = this.transform;
-                tiles[$"{r},{c}"] = tile;
-                // Das Tile-Script auf der Kachel konfigurieren.
+
+                string key = $"{r},{c}";
+                tiles[key] = tile;
+
+                // Tile-Script konfigurieren
                 Tile tileScript = tile.GetComponent<Tile>();
                 if (tileScript != null)
                 {
@@ -91,32 +65,33 @@ public class BoardRenderer : MonoBehaviour
                     tileScript.gameManager = gameManager;
                 }
 
-                // Wert direkt aus dem Board an dieser Position [r, c] holen.
+                // Wert aus dem Board holen
                 int value = gameManager.board[r, c];
 
-                //// SpriteRenderer suchen, um optional Farbe zu setzen.
-                //SpriteRenderer sr = tile.GetComponent<SpriteRenderer>();
-                //if (sr != null)
-                //{
-                //    // Einfache Visualisierung:
-                //    // Wert 4 → rot (starke Magneten), sonst grau (schwache/keine Magneten).
-                //    if (value == 4)
-                //        sr.color = Color.red;
-                //    else
-                //        sr.color = Color.gray;
-                //    sr.tag = value == 4 ? "red" : "gray";
-                //}
-                //else
-                //{
-                //    Debug.LogWarning("BoardRenderer: Tile-Prefab hat keinen SpriteRenderer!");
-                //}
+                // HYBRID: SpriteRenderer (2D) ODER MeshRenderer (3D)
+                SpriteRenderer sr = tile.GetComponent<SpriteRenderer>();
+                MeshRenderer mr = tile.GetComponent<MeshRenderer>();
+
+                Color tileColor = value == 4 ? Color.red : Color.gray;
+
+                if (sr != null)
+                {
+                    // 2D-Version
+                    sr.color = tileColor;
+                    sr.tag = value == 4 ? "red" : "gray";
+                    originalTileColors[key] = tileColor;
+                }
+                else if (mr != null)
+                {
+                    // 3D-Version
+                    mr.material.color = tileColor;
+                    mr.tag = value == 4 ? "red" : "gray";
+                    originalTileColors[key] = tileColor;
+                }
             }
         }
     }
 
-    // Hilfsfunktion:
-    // Rechnet eine Board-Position (row, column) in eine Weltposition um.
-    // Diese Funktion wird vom GameManager benutzt, um Figuren an die richtige Stelle zu setzen.
     public Vector3 GetWorldPosition(int row, int column)
     {
         int rows = gameManager.rows;
@@ -131,13 +106,11 @@ public class BoardRenderer : MonoBehaviour
         return new Vector3(x, y, 0f);
     }
 
-    // Highlightet die gültigen Zugziele
+    // HYBRID: Highlighting für 2D + 3D
     public void HighlightValidMoves(List<ValidMove> validMoves)
     {
-        // Alte Highlights löschen
         ClearHighlights();
 
-        // Neue Highlights setzen
         foreach (ValidMove move in validMoves)
         {
             string key = $"{move.to.row},{move.to.column}";
@@ -145,34 +118,62 @@ public class BoardRenderer : MonoBehaviour
             if (tiles.ContainsKey(key))
             {
                 GameObject targetTile = tiles[key];
+                Color highlightColor = new Color(0, 1, 0, 0.7f); // Grün
+
                 SpriteRenderer sr = targetTile.GetComponent<SpriteRenderer>();
+                MeshRenderer mr = targetTile.GetComponent<MeshRenderer>();
 
                 if (sr != null)
                 {
-                    // Grün = gültiges Zielfeld
-                    sr.color = new Color(0, 1, 0, 0.7f);  // Grün mit etwas Transparenz
+                    // 2D-Version
+                    sr.color = highlightColor;
+                    highlightedTiles.Add(targetTile);
+                }
+                else if (mr != null)
+                {
+                    // 3D-Version
+                    mr.material.color = highlightColor;
                     highlightedTiles.Add(targetTile);
                 }
             }
         }
     }
 
-    // Löscht alle Highlights
+    // HYBRID: Clear Highlights für 2D + 3D
     public void ClearHighlights()
     {
         foreach (GameObject tile in highlightedTiles)
         {
-            SpriteRenderer sr = tile.GetComponent<SpriteRenderer>();
-            if (sr != null)
+            // Original-Farbe aus Dictionary holen
+            string key = null;
+            foreach (var kvp in tiles)
             {
-                // Original-Farbe zurücksetzen basierend auf Tag
-                if (sr.tag == "red")
-                    sr.color = Color.red;
-                else
-                    sr.color = Color.white;
+                if (kvp.Value == tile)
+                {
+                    key = kvp.Key;
+                    break;
+                }
+            }
+
+            if (key != null && originalTileColors.ContainsKey(key))
+            {
+                Color originalColor = originalTileColors[key];
+
+                SpriteRenderer sr = tile.GetComponent<SpriteRenderer>();
+                MeshRenderer mr = tile.GetComponent<MeshRenderer>();
+
+                if (sr != null)
+                {
+                    // 2D-Version
+                    sr.color = originalColor;
+                }
+                else if (mr != null)
+                {
+                    // 3D-Version
+                    mr.material.color = originalColor;
+                }
             }
         }
         highlightedTiles.Clear();
     }
-
 }
