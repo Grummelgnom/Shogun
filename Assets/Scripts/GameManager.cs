@@ -39,6 +39,8 @@ public class GameManager : MonoBehaviour
 
     // Alle Pieces in der Szene
     private Dictionary<string, Piece> pieces = new Dictionary<string, Piece>();
+    private bool isAnimating = false; // Blockiert Input während Animation
+
 
     [Header("Game State")]
     public GameMode mode = GameMode.TwoPlayer;
@@ -666,7 +668,7 @@ public class GameManager : MonoBehaviour
     public void OnTileClicked(int row, int column)
     {
         if (winner != 0) return;
-
+        if (isAnimating) return;
         // In AI-vs-AI ignorieren wir alle Klicks komplett
         if (mode == GameMode.VsAI && aiVsAi) return;
 
@@ -726,9 +728,8 @@ public class GameManager : MonoBehaviour
         movingPiece.row = move.to.row;
         movingPiece.column = move.to.column;
 
-        Vector3 newWorldPos = boardRenderer.GetWorldPosition(move.to.row, move.to.column);
-        newWorldPos.z = -0.1f;
-        movingPiece.transform.position = newWorldPos;
+        // Figur bewegen – SMOOTH mit Animation!
+        StartCoroutine(MovePieceAnimated(movingPiece, move.to.row, move.to.column));
 
         if (targetPiece != null)
         {
@@ -1102,6 +1103,16 @@ public class GameManager : MonoBehaviour
                 pieces[piece.id] = piece;
             }
         }
+    }
+    private IEnumerator MovePieceAnimated(Piece piece, int targetRow, int targetCol)
+    {
+        isAnimating = true;
+
+        // Starte die Bewegungsanimation
+        yield return StartCoroutine(piece.MoveTo(targetRow, targetCol));
+
+        // Animation fertig – erlaube wieder Input
+        isAnimating = false;
     }
 
 }

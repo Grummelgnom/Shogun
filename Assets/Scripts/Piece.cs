@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 
 public class Piece : MonoBehaviour
 {
@@ -17,6 +18,12 @@ public class Piece : MonoBehaviour
 
     // Neu: Text für Range-Anzeige
     private TextMesh rangeText;
+
+    // Smooth Movement
+    private bool isMoving = false;
+    public float moveSpeed = 8f; // Geschwindigkeit – im Inspector anpassbar
+    public float hoverHeight = 0.3f; // Wie hoch die Figur sich anhebt
+
 
     void Start()
     {
@@ -146,4 +153,73 @@ public class Piece : MonoBehaviour
             rangeText.text = range.ToString();
         }
     }
+    /// <summary>
+    /// Bewegt die Figur smooth zur Zielposition mit Anheben
+    /// </summary>
+    /// <summary>
+    /// Bewegt die Figur smooth zur Zielposition mit Anheben
+    /// </summary>
+    public IEnumerator MoveTo(int targetRow, int targetCol)
+    {
+        isMoving = true;
+
+        // Globale Werte vom OptionsManager holen
+        float speed = OptionsManager.Instance != null ? OptionsManager.Instance.globalMoveSpeed : moveSpeed;
+        float hover = OptionsManager.Instance != null ? OptionsManager.Instance.globalHoverHeight : hoverHeight;
+
+        Vector3 startPos = transform.position;
+        Vector3 endPos = gameManager.boardRenderer.GetWorldPosition(targetRow, targetCol);
+
+        // Z-Position korrekt setzen (2D vs 3D)
+        if (spriteRenderer != null)
+        {
+            endPos.z = -0.1f; // 2D
+        }
+        else
+        {
+            endPos.z = startPos.z; // 3D – Z beibehalten
+        }
+
+        // Mittelpunkt berechnen (für den "Bogen")
+        Vector3 midPos = (startPos + endPos) / 2f;
+
+        // In 3D: Anheben auf Z-Achse (zur Kamera hin)
+        // In 2D: Anheben auf Z-Achse (nach vorne)
+        midPos.z -= hover;
+
+        float distance = Vector3.Distance(startPos, endPos);
+        float duration = distance / speed;
+
+        float elapsed = 0f;  // <-- DIESE ZEILE FEHLTE!
+
+        // Phase 1: Anheben + zur Mitte bewegen (50% der Zeit)
+        while (elapsed < duration / 2f)
+        {
+            elapsed += Time.deltaTime;
+            float t = (elapsed / (duration / 2f));
+            transform.position = Vector3.Lerp(startPos, midPos, t);
+            yield return null;
+        }
+
+        // Phase 2: Absenken + zum Ziel bewegen (50% der Zeit)
+        elapsed = 0f;
+        while (elapsed < duration / 2f)
+        {
+            elapsed += Time.deltaTime;
+            float t = (elapsed / (duration / 2f));
+            transform.position = Vector3.Lerp(midPos, endPos, t);
+            yield return null;
+        }
+
+        // Exakte Endposition
+        transform.position = endPos;
+        isMoving = false;
+    }
+
+
+    public bool IsMoving()
+    {
+        return isMoving;
+    }
+
 }
