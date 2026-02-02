@@ -684,7 +684,7 @@ public class GameManager : MonoBehaviour
         else if (selectedPiece != null && clickedPiece == null)
         {
             ValidMove move = validMoves.FirstOrDefault(m => m.to.row == row && m.to.column == column);
-            if (move != null) ExecuteMove(move);
+            if (move != null) StartCoroutine(ExecuteMove(move)); // GEÄNDERT
             else DeselectPiece();
         }
         else if (clickedPiece != null && clickedPiece.owner != currentPlayer)
@@ -692,7 +692,7 @@ public class GameManager : MonoBehaviour
             if (selectedPiece != null)
             {
                 ValidMove move = validMoves.FirstOrDefault(m => m.to.row == row && m.to.column == column);
-                if (move != null) ExecuteMove(move);
+                if (move != null) StartCoroutine(ExecuteMove(move)); // GEÄNDERT
             }
         }
     }
@@ -716,20 +716,22 @@ public class GameManager : MonoBehaviour
         boardRenderer.ClearHighlights();
     }
 
-    public void ExecuteMove(ValidMove move)
+    // GEÄNDERT: ExecuteMove ist jetzt IEnumerator!
+    public IEnumerator ExecuteMove(ValidMove move)
     {
-        if (winner != 0) return;
+        if (winner != 0) yield break;
 
         Piece movingPiece = GetPieceAt(move.from.row, move.from.column);
         Piece targetPiece = GetPieceAt(move.to.row, move.to.column);
 
-        if (movingPiece == null) return;
+        if (movingPiece == null) yield break;
 
         movingPiece.row = move.to.row;
         movingPiece.column = move.to.column;
 
         // Figur bewegen – SMOOTH mit Animation!
-        StartCoroutine(MovePieceAnimated(movingPiece, move.to.row, move.to.column));
+        // WICHTIG: yield return wartet, bis Animation fertig ist!
+        yield return StartCoroutine(MovePieceAnimated(movingPiece, move.to.row, move.to.column));
 
         if (targetPiece != null)
         {
@@ -741,7 +743,7 @@ public class GameManager : MonoBehaviour
                 winner = currentPlayer;
                 Debug.Log($"Spieler {winner} GEWINNT! Shogun geschlagen!");
                 DeselectPiece();
-                return;
+                yield break;
             }
         }
 
@@ -758,7 +760,7 @@ public class GameManager : MonoBehaviour
         {
             winner = nextPlayer; // willkürlich, damit es endet
             Debug.LogWarning($"AI-vs-AI Notbremse: max turns {aiVsAiMaxTurns} erreicht.");
-            return;
+            yield break;
         }
 
         int nextPlayerCount = GetPlayerPieceCount(nextPlayer);
@@ -767,7 +769,7 @@ public class GameManager : MonoBehaviour
         {
             winner = currentPlayer;
             Debug.Log($"Spieler {winner} GEWINNT! Armee des Gegners aufgerieben ({nextPlayerCount} Steine übrig)!");
-            return;
+            yield break;
         }
 
         if (!HasLegalMoves(nextPlayer))
@@ -775,7 +777,7 @@ public class GameManager : MonoBehaviour
             bool inCheck = IsPlayerInCheck(nextPlayer);
             winner = currentPlayer;
             Debug.Log(inCheck ? $"Spieler {winner} GEWINNT! CHECKMATE!" : $"Spieler {winner} GEWINNT! Gegner ist TRAPPED!");
-            return;
+            yield break;
         }
 
         currentPlayer = nextPlayer;
@@ -807,10 +809,10 @@ public class GameManager : MonoBehaviour
         int aiToMove = currentPlayer;
         ValidMove best = GetBestMove(aiToMove, aiDepth);
 
-        aiIsThinking = false;                 // << WICHTIG: VOR ExecuteMove
+        aiIsThinking = false;
 
         if (best != null)
-            ExecuteMove(best);
+            yield return StartCoroutine(ExecuteMove(best)); // GEÄNDERT: yield return!
         else
             Debug.LogWarning("KI: Kein Zug gefunden.");
     }
@@ -1104,6 +1106,7 @@ public class GameManager : MonoBehaviour
             }
         }
     }
+
     private IEnumerator MovePieceAnimated(Piece piece, int targetRow, int targetCol)
     {
         isAnimating = true;

@@ -187,8 +187,8 @@ public class Piece : MonoBehaviour
         // In 2D: Anheben auf Z-Achse (nach vorne)
         midPos.z -= hover;
 
-        float distance = Vector3.Distance(startPos, endPos);
-        float duration = distance / speed;
+        // GEÄNDERT: Feste Dauer für alle, Distanz spielt keine Rolle mehr
+        float duration = 1.0f / speed;
 
         float elapsed = 0f;  // <-- DIESE ZEILE FEHLTE!
 
