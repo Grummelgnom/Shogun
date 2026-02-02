@@ -96,12 +96,27 @@ public class Piece : MonoBehaviour
     }
 
     // Erstellt die Range-Anzeige als TextMesh
+    // Erstellt die Range-Anzeige als TextMesh
+    // Erstellt die Range-Anzeige als TextMesh
+    // Erstellt die Range-Anzeige als TextMesh
     void CreateRangeDisplay()
     {
         // Neues GameObject als Kind erstellen
         GameObject textObj = new GameObject("RangeText");
         textObj.transform.parent = this.transform;
-        textObj.transform.localPosition = new Vector3(0, 0, -0.1f);  // Leicht vor dem Piece
+
+        // HYBRID: Position je nach 2D oder 3D
+        if (spriteRenderer != null)
+        {
+            // 2D: Leicht vor dem Piece (z-Achse negativ = nach vorne zur Kamera)
+            textObj.transform.localPosition = new Vector3(0, 0, -0.1f);
+        }
+        else
+        {
+            // 3D auf XY-Ebene: Zur Kamera hin (z-Achse negativ)
+            textObj.transform.localPosition = new Vector3(0, 0, -0.5f);  // NEGATIV!
+            textObj.transform.localRotation = Quaternion.identity;
+        }
 
         // TextMesh Component hinzufügen
         rangeText = textObj.AddComponent<TextMesh>();
@@ -116,9 +131,12 @@ public class Piece : MonoBehaviour
         MeshRenderer mr = textObj.GetComponent<MeshRenderer>();
         if (mr != null)
         {
-            mr.sortingOrder = 10;  // Über allem anderen
+            mr.sortingOrder = 10;
         }
     }
+
+
+
 
     // Aktualisiert die Range-Anzeige
     void UpdateRangeDisplay()

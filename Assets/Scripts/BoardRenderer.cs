@@ -72,8 +72,11 @@ public class BoardRenderer : MonoBehaviour
                 SpriteRenderer sr = tile.GetComponent<SpriteRenderer>();
                 MeshRenderer mr = tile.GetComponent<MeshRenderer>();
 
-                Color tileColor = value == 4 ? Color.red : Color.gray;
+                // Color tileColor = value == 4 ? Color.red : Color.gray;
+                // Color tileColor = new Color(1, 1, 1, 0);  // Transparent
+                Color tileColor = Color.white;  // Alle Tiles weiß/neutral
 
+                
                 if (sr != null)
                 {
                     // 2D-Version
