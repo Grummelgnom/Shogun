@@ -2158,6 +2158,7 @@ GameObject:
   - component: {fileID: 645842484}
   - component: {fileID: 645842483}
   - component: {fileID: 645842482}
+  - component: {fileID: 645842485}
   m_Layer: 5
   m_Name: OptionsPanel
   m_TagString: Untagged
@@ -2226,6 +2227,22 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &645842485
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 645842481}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 223e13716a246594abbcabf93a6bea35, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sliderMoveSpeed: {fileID: 576867210}
+  sliderHoverHeight: {fileID: 1707186172}
+  labelSpeed: {fileID: 194256122}
+  labelHeight: {fileID: 433626538}
 --- !u!1 &1048229981
 GameObject:
   m_ObjectHideFlags: 0
