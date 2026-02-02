@@ -1008,4 +1008,100 @@ public class GameManager : MonoBehaviour
     public int GetCurrentPlayer() => currentPlayer;
     public int[,] GetGridValues() => gridValues;
     public BoardRenderer GetBoardRenderer() => boardRenderer;
+
+    // =============================
+    // ViewSwitcher Support
+    // =============================
+
+    [System.Serializable]
+    public class PieceData
+    {
+        public int owner;
+        public PieceType pieceType;
+        public int row;
+        public int column;
+        public int range;
+        public string id;
+    }
+
+    public List<PieceData> GetAllPieceData()
+    {
+        List<PieceData> data = new List<PieceData>();
+
+        foreach (Piece p in pieces.Values)
+        {
+            if (p != null)
+            {
+                data.Add(new PieceData
+                {
+                    owner = p.owner,
+                    pieceType = p.pieceType,
+                    row = p.row,
+                    column = p.column,
+                    range = p.range,
+                    id = p.id
+                });
+            }
+        }
+
+        return data;
+    }
+
+    public void DestroyAllPieces()
+    {
+        foreach (Piece p in pieces.Values.ToList())
+        {
+            if (p != null && p.gameObject != null)
+                Destroy(p.gameObject);
+        }
+        pieces.Clear();
+    }
+
+    public void RespawnPieces(List<PieceData> pieceData)
+    {
+        foreach (PieceData data in pieceData)
+        {
+            GameObject prefab = null;
+
+            // Prefab auswählen basierend auf Owner + Type
+            if (data.owner == 1 && data.pieceType == PieceType.Soldier)
+                prefab = p1NormalPrefab;
+            else if (data.owner == 1 && data.pieceType == PieceType.Shogun)
+                prefab = p1ShogunPrefab;
+            else if (data.owner == 2 && data.pieceType == PieceType.Soldier)
+                prefab = p2NormalPrefab;
+            else if (data.owner == 2 && data.pieceType == PieceType.Shogun)
+                prefab = p2ShogunPrefab;
+
+            if (prefab == null)
+            {
+                Debug.LogError($"Kein Prefab für Owner {data.owner}, Type {data.pieceType}!");
+                continue;
+            }
+
+            // Spawnen
+            Vector3 worldPos = boardRenderer.GetWorldPosition(data.row, data.column);
+            worldPos.z = -0.1f;
+
+            GameObject pieceObj = Instantiate(prefab, worldPos, Quaternion.identity);
+            Piece piece = pieceObj.GetComponent<Piece>();
+
+            if (piece != null)
+            {
+                piece.owner = data.owner;
+                piece.pieceType = data.pieceType;
+                piece.row = data.row;
+                piece.column = data.column;
+                piece.gameManager = this;
+                piece.range = data.range;
+                piece.id = data.id;
+
+                // Range-Display aktualisieren
+                piece.UpdateRange(data.range, data.pieceType);
+
+                pieces[piece.id] = piece;
+            }
+        }
+    }
+
 }

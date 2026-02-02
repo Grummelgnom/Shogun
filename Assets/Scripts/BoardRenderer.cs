@@ -30,10 +30,12 @@ public class BoardRenderer : MonoBehaviour
             return;
         }
 
-        CreateBoardVisuals();
+        // NICHT mehr automatisch spawnen - ViewSwitcher übernimmt das!
+        // CreateBoardVisuals();  <-- AUSKOMMENTIEREN oder LÖSCHEN
     }
 
-    void CreateBoardVisuals()
+
+    public void CreateBoardVisuals()
     {
         int rows = gameManager.rows;
         int columns = gameManager.columns;
@@ -179,4 +181,23 @@ public class BoardRenderer : MonoBehaviour
         }
         highlightedTiles.Clear();
     }
+
+    // =============================
+    // ViewSwitcher Support
+    // =============================
+
+    public void DestroyBoard()
+    {
+        foreach (GameObject tile in tiles.Values)
+        {
+            if (tile != null)
+                DestroyImmediate(tile);  // Sofort löschen!
+        }
+
+        tiles.Clear();
+        highlightedTiles.Clear();
+        originalTileColors.Clear();
+    }
+
+
 }
