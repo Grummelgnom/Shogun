@@ -39,7 +39,8 @@ public class GameManager : MonoBehaviour
 
     // Alle Pieces in der Szene
     private Dictionary<string, Piece> pieces = new Dictionary<string, Piece>();
-    private bool isAnimating = false; // Blockiert Input während Animation
+    public bool isAnimating = false;  // Bereits public für OnTileClicked
+    public bool aiIsThinking = false; // Jetzt auch public für ViewSwitcher
 
 
     [Header("Game State")]
@@ -54,7 +55,7 @@ public class GameManager : MonoBehaviour
     public int aiPlayer = 2;                 // in VsAI: welcher Player ist die KI
     [Range(1, 8)] public int aiDepth = 3;    // wird aus GameSettings gesetzt
     public float aiDelaySeconds = 0.35f;     // wird aus GameSettings gesetzt
-    private bool aiIsThinking = false;
+    
 
     [Header("AI vs AI")]
     public bool aiVsAi = false;              // aus GameSettings.AIVsAI

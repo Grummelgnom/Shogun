@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class ViewSwitcher : MonoBehaviour
 {
@@ -39,14 +39,29 @@ public class ViewSwitcher : MonoBehaviour
         SwitchTo2D();
     }
 
-    // �ffentliche Methode f�r UI-Button
+    // Öffentliche Methode für UI-Button
     public void ToggleView()
     {
+        // Blockiere Wechsel während Animationen oder AI-Zügen
+        if (gameManager.isAnimating)
+        {
+            Debug.Log("⚠️ Warte bis Bewegung abgeschlossen ist!");
+            return;
+        }
+
+        // Blockiere während AI nachdenkt (VsAI/AIvAI)
+        if (gameManager.mode == GameMode.VsAI && gameManager.aiIsThinking)
+        {
+            Debug.Log("⚠️ Warte bis KI fertig ist!");
+            return;
+        }
+
         if (is3DMode)
             SwitchTo2D();
         else
             SwitchTo3D();
     }
+
 
     void SwitchTo2D()
     {
@@ -103,7 +118,7 @@ public class ViewSwitcher : MonoBehaviour
         int currentPlayer = gameManager.GetCurrentPlayer();
         int[,] gridValues = gameManager.GetGridValues();
 
-        // Altes Board + Figuren l�schen
+        // Altes Board + Figuren löschen
         boardRenderer.DestroyBoard();
         gameManager.DestroyAllPieces();
 
