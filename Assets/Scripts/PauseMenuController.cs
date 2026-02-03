@@ -7,12 +7,19 @@ public class PauseMenuController : MonoBehaviour
     [SerializeField] private string mainMenuSceneName = "MainMenu";
     [SerializeField] private string mainSceneName = "MainScene";
 
+    [Header("UI References")]
+    [SerializeField] private GameUIController gameUIController; // NEU
+
     private bool isPaused = false;
 
     void Start()
     {
         if (pausePanel != null) pausePanel.SetActive(false);
         Time.timeScale = 1f;
+
+        // Falls nicht zugewiesen, automatisch finden
+        if (gameUIController == null)
+            gameUIController = FindFirstObjectByType<GameUIController>();
     }
 
     void Update()
@@ -29,6 +36,10 @@ public class PauseMenuController : MonoBehaviour
         isPaused = true;
         if (pausePanel != null) pausePanel.SetActive(true);
         Time.timeScale = 0f;
+
+        // Hint Button ausblenden
+        if (gameUIController != null)
+            gameUIController.SetHintButtonVisible(false);
     }
 
     public void Resume()
@@ -36,6 +47,10 @@ public class PauseMenuController : MonoBehaviour
         isPaused = false;
         if (pausePanel != null) pausePanel.SetActive(false);
         Time.timeScale = 1f;
+
+        // Hint Button wieder einblenden
+        if (gameUIController != null)
+            gameUIController.SetHintButtonVisible(true);
     }
 
     public void Restart()

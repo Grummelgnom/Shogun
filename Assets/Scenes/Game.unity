@@ -282,6 +282,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   optionsPanel: {fileID: 244318251}
+  gameUIController: {fileID: 0}
 --- !u!4 &22226853
 Transform:
   m_ObjectHideFlags: 0
@@ -2628,6 +2629,7 @@ MonoBehaviour:
   resultText: {fileID: 1053918752}
   mainMenuSceneName: MainMenu
   mainSceneName: Game
+  hintButton: {fileID: 1952144788}
 --- !u!4 &742260663
 Transform:
   m_ObjectHideFlags: 0
@@ -5444,6 +5446,7 @@ MonoBehaviour:
   pausePanel: {fileID: 362587113}
   mainMenuSceneName: MainMenu
   mainSceneName: Game
+  gameUIController: {fileID: 742260662}
 --- !u!4 &1960531381
 Transform:
   m_ObjectHideFlags: 0

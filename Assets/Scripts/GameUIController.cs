@@ -11,24 +11,42 @@ public class GameUIController : MonoBehaviour
     [SerializeField] private string mainMenuSceneName = "MainMenu";
     [SerializeField] private string mainSceneName = "MainScene";
 
+    [Header("Game UI Elements")]
+    [SerializeField] private GameObject hintButton; // NEU: Hint Button Referenz
+
     private bool shown = false;
 
     void Start()
     {
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
+
+        // Hint Button zu Spielbeginn einblenden
+        SetHintButtonVisible(true);
     }
 
     void Update()
     {
         if (shown || gameManager == null) return;
 
-        int winner = gameManager.GetWinner(); // Getter existiert bei euch
+        int winner = gameManager.GetWinner();
         if (winner != 0)
         {
             shown = true;
             if (gameOverPanel != null) gameOverPanel.SetActive(true);
             if (resultText != null) resultText.text = $"Spieler {winner} gewinnt!";
+
+            // Hint Button bei Game Over ausblenden
+            SetHintButtonVisible(false);
         }
+    }
+
+    /// <summary>
+    /// Steuert die Sichtbarkeit des Hint Buttons
+    /// </summary>
+    public void SetHintButtonVisible(bool visible)
+    {
+        if (hintButton != null)
+            hintButton.SetActive(visible);
     }
 
     public void Restart()
