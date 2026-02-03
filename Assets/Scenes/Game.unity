@@ -2677,6 +2677,7 @@ MonoBehaviour:
   mainCamera: {fileID: 995488361}
   gameManager: {fileID: 1443601373}
   boardRenderer: {fileID: 203994836}
+  buttonText: {fileID: 279581956}
   tile2DPrefab: {fileID: 7579386748276705544, guid: b9a1cb43ea2bfba4a9354ca85d6b3ed3, type: 3}
   p1Normal2DPrefab: {fileID: 7367992893990249812, guid: d3b54f08a3aa8774fb5c1eaa5917b11b, type: 3}
   p1Shogun2DPrefab: {fileID: 5771174678213792516, guid: 204853396e7be4943aae2d107a8ef44a, type: 3}

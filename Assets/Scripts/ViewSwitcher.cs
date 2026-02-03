@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using TMPro; // NEU für TextMeshPro
 
 public class ViewSwitcher : MonoBehaviour
 {
@@ -6,6 +7,9 @@ public class ViewSwitcher : MonoBehaviour
     public Camera mainCamera;
     public GameManager gameManager;
     public BoardRenderer boardRenderer;
+
+    [Header("UI")]
+    public TMP_Text buttonText; // NEU: Referenz zum Button-Text
 
     [Header("2D Prefabs")]
     public GameObject tile2DPrefab;
@@ -42,26 +46,11 @@ public class ViewSwitcher : MonoBehaviour
     // Öffentliche Methode für UI-Button
     public void ToggleView()
     {
-        // Blockiere Wechsel während Animationen oder AI-Zügen
-        if (gameManager.isAnimating)
-        {
-            Debug.Log("⚠️ Warte bis Bewegung abgeschlossen ist!");
-            return;
-        }
-
-        // Blockiere während AI nachdenkt (VsAI/AIvAI)
-        if (gameManager.mode == GameMode.VsAI && gameManager.aiIsThinking)
-        {
-            Debug.Log("⚠️ Warte bis KI fertig ist!");
-            return;
-        }
-
         if (is3DMode)
             SwitchTo2D();
         else
             SwitchTo3D();
     }
-
 
     void SwitchTo2D()
     {
@@ -74,7 +63,7 @@ public class ViewSwitcher : MonoBehaviour
         mainCamera.transform.position = camera2DPosition;
         mainCamera.transform.eulerAngles = camera2DRotation;
 
-        // Prefabs + Spacing umstellen
+        // Prefabs & Spacing umstellen
         boardRenderer.tilePrefab = tile2DPrefab;
         boardRenderer.tileSpacing = spacing2D;
         gameManager.p1NormalPrefab = p1Normal2DPrefab;
@@ -82,8 +71,11 @@ public class ViewSwitcher : MonoBehaviour
         gameManager.p2NormalPrefab = p2Normal2DPrefab;
         gameManager.p2ShogunPrefab = p2Shogun2DPrefab;
 
-        // Board + Figuren neu aufbauen
+        // Board & Figuren neu aufbauen
         RebuildScene();
+
+        // NEU: Button-Text aktualisieren
+        UpdateButtonText();
     }
 
     void SwitchTo3D()
@@ -97,7 +89,7 @@ public class ViewSwitcher : MonoBehaviour
         mainCamera.transform.position = camera3DPosition;
         mainCamera.transform.eulerAngles = camera3DRotation;
 
-        // Prefabs + Spacing umstellen
+        // Prefabs & Spacing umstellen
         boardRenderer.tilePrefab = tile3DPrefab;
         boardRenderer.tileSpacing = spacing3D;
         gameManager.p1NormalPrefab = p1Normal3DPrefab;
@@ -105,8 +97,20 @@ public class ViewSwitcher : MonoBehaviour
         gameManager.p2NormalPrefab = p2Normal3DPrefab;
         gameManager.p2ShogunPrefab = p2Shogun3DPrefab;
 
-        // Board + Figuren neu aufbauen
+        // Board & Figuren neu aufbauen
         RebuildScene();
+
+        // NEU: Button-Text aktualisieren
+        UpdateButtonText();
+    }
+
+    // NEU: Button-Text je nach Modus ändern
+    void UpdateButtonText()
+    {
+        if (buttonText != null)
+        {
+            buttonText.text = is3DMode ? "Zu 2D" : "Zu 3D";
+        }
     }
 
     void RebuildScene()
@@ -118,7 +122,7 @@ public class ViewSwitcher : MonoBehaviour
         int currentPlayer = gameManager.GetCurrentPlayer();
         int[,] gridValues = gameManager.GetGridValues();
 
-        // Altes Board + Figuren löschen
+        // Altes Board & Figuren löschen
         boardRenderer.DestroyBoard();
         gameManager.DestroyAllPieces();
 
@@ -131,6 +135,6 @@ public class ViewSwitcher : MonoBehaviour
         // Spielstand wiederherstellen
         gameManager.currentPlayer = currentPlayer;
 
-        Debug.Log("Scene rebuilt in " + (is3DMode ? "3D" : "2D") + " mode!");
+        Debug.Log($"Scene rebuilt in {(is3DMode ? "3D" : "2D")} mode!");
     }
 }
