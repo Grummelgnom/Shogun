@@ -12,6 +12,10 @@ public class Piece : MonoBehaviour
     public string id;
 
     private bool isSelected = false;
+    // Hint-System
+    private bool isHinted = false;
+    private Color hintColor = new Color(0.2f, 1f, 0.2f, 1f); // Helles Grün
+
     private Color originalColor;
     private SpriteRenderer spriteRenderer;
     private MeshRenderer meshRenderer;  // NEU: Für 3D
@@ -49,41 +53,36 @@ public class Piece : MonoBehaviour
 
     void OnMouseDown()
     {
-        if (gameManager != null)
+        // Ignoriere Klicks auf zerstörte/inaktive Figuren
+        if (gameManager == null) return;
+        if (this == null || gameObject == null) return;
+
+        // Prüfe, ob diese Figur noch in der aktiven pieces-Liste ist
+        if (!gameManager.IsPieceActive(this))
         {
-            gameManager.OnTileClicked(row, column);
+            Debug.LogWarning($"⚠️ Klick auf veraltete Figur {id} ignoriert!");
+            return;
         }
+
+        gameManager.OnTileClicked(row, column);
     }
+
 
     public void SetSelected(bool selected)
     {
         isSelected = selected;
+        UpdateVisualState();
 
-        if (spriteRenderer != null)
+        // Stelle sicher, dass Z-Position korrekt bleibt (wichtig für 2D!)
+        if (spriteRenderer != null) // 2D-Modus
         {
-            // 2D-Version
-            if (isSelected)
-            {
-                spriteRenderer.color = originalColor * 1.5f;
-            }
-            else
-            {
-                spriteRenderer.color = originalColor;
-            }
-        }
-        else if (meshRenderer != null)
-        {
-            // 3D-Version
-            if (isSelected)
-            {
-                meshRenderer.material.color = originalColor * 1.5f;
-            }
-            else
-            {
-                meshRenderer.material.color = originalColor;
-            }
+            Vector3 pos = transform.position;
+            pos.z = -0.1f; // Vor den Tiles
+            transform.position = pos;
         }
     }
+
+
 
     public void UpdateRange(int interpretedGridValue, PieceType type)
     {
@@ -221,5 +220,48 @@ public class Piece : MonoBehaviour
     {
         return isMoving;
     }
+    /// <summary>
+    /// Setzt Hint-Highlighting für diese Figur
+    /// </summary>
+    public void SetHintHighlight(bool active)
+    {
+        isHinted = active;
+        UpdateVisualState();
+    }
+
+    /// <summary>
+    /// Aktualisiert die visuelle Darstellung basierend auf Zustand
+    /// </summary>
+    private void UpdateVisualState()
+    {
+        if (spriteRenderer != null) // 2D
+        {
+            if (isHinted)
+                spriteRenderer.color = hintColor;
+            else if (isSelected)
+                spriteRenderer.color = new Color(1f, 0.6f, 0f); // Orange
+            else
+                spriteRenderer.color = originalColor;
+
+            // Z-Position fix
+            Vector3 pos = transform.position;
+            pos.z = -0.1f;
+            transform.position = pos;
+        }
+        else // 3D
+        {
+            MeshRenderer mr = GetComponent<MeshRenderer>();
+            if (mr != null)
+            {
+                if (isHinted)
+                    mr.material.color = hintColor;
+                else if (isSelected)
+                    mr.material.color = new Color(1f, 0.6f, 0f); // Orange
+                else
+                    mr.material.color = originalColor;
+            }
+        }
+    }
+
 
 }

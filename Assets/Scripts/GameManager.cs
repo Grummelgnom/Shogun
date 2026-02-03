@@ -1117,5 +1117,93 @@ public class GameManager : MonoBehaviour
         // Animation fertig – erlaube wieder Input
         isAnimating = false;
     }
+    // ===============================
+    // HINT SYSTEM
+    // ===============================
+
+    /// <summary>
+    /// Zeigt alle Figuren, die sich bewegen können
+    /// </summary>
+    /// <summary>
+    /// Zeigt alle Figuren, die sich bewegen können
+    /// </summary>
+    public void ShowHint()
+    {
+        if (winner != 0) return; // Spiel ist vorbei
+        if (isAnimating) return; // Während Animation nichts anzeigen
+
+        // In AI-vs-AI oder wenn KI dran ist, keinen Hint zeigen
+        if (mode == GameMode.VsAI && (aiVsAi || currentPlayer == aiPlayer))
+        {
+            Debug.Log("💡 Hint nicht verfügbar (KI am Zug)");
+            return;
+        }
+
+        List<Piece> movablePieces = new List<Piece>();
+
+        // WICHTIG: Kopiere die Collection vorher in eine Liste!
+        List<Piece> allPieces = pieces.Values.ToList();
+
+        // Alle eigenen Figuren finden, die gültige Züge haben
+        foreach (Piece p in allPieces)
+        {
+            if (p != null && p.owner == currentPlayer)
+            {
+                List<ValidMove> moves = CalculateValidMoves(p);
+                if (moves.Count > 0)
+                {
+                    movablePieces.Add(p);
+                }
+            }
+        }
+
+        // Highlighten
+        if (movablePieces.Count > 0)
+        {
+            foreach (Piece p in movablePieces)
+            {
+                p.SetHintHighlight(true);
+            }
+
+            Debug.Log($"💡 Hint: {movablePieces.Count} Figur(en) können sich bewegen!");
+
+            // Nach 2 Sekunden wieder ausblenden
+            StartCoroutine(ClearHintAfterDelay(2f));
+        }
+        else
+        {
+            Debug.Log("💡 Keine beweglichen Figuren gefunden!");
+        }
+    }
+
+    /// <summary>
+    /// Blendet Hint-Highlighting nach Verzögerung aus
+    /// </summary>
+    private IEnumerator ClearHintAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        // WICHTIG: Auch hier Liste kopieren!
+        List<Piece> allPieces = pieces.Values.ToList();
+
+        // Alle Hints entfernen
+        foreach (Piece p in allPieces)
+        {
+            if (p != null)
+            {
+                p.SetHintHighlight(false);
+            }
+        }
+    }
+    /// <summary>
+    /// Prüft, ob eine Figur noch aktiv/gültig ist
+    /// </summary>
+    public bool IsPieceActive(Piece piece)
+    {
+        if (piece == null) return false;
+
+        // Prüfe, ob die Figur in der pieces-Dictionary ist
+        return pieces.ContainsKey(piece.id) && pieces[piece.id] == piece;
+    }
 
 }
