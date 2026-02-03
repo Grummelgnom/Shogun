@@ -49,7 +49,8 @@ public class GameManager : MonoBehaviour
     private Piece selectedPiece = null;
     private List<ValidMove> validMoves = new List<ValidMove>();
     private int winner = 0;
-    private int turnCount = 0;
+    public int turnCount = 0; // Jetzt public für StatsUI
+
 
     [Header("AI (single settings apply to both AIs)")]
     public int aiPlayer = 2;                 // in VsAI: welcher Player ist die KI
