@@ -1,37 +1,40 @@
-﻿using System.Collections;
-using UnityEngine;
+﻿using UnityEngine;
+using System.Collections;
 
 public class Piece : MonoBehaviour
 {
-    public int owner;                    // 1 oder 2
-    public PieceType pieceType;          // Soldier oder Shogun
+    [Header("Game Data")]
+    public int owner; // 1 = P1, 2 = P2
+    public PieceType pieceType;
     public int row;
     public int column;
-    public int range;                    // Aktuelle Bewegungsreichweite (1-4)
-    public GameManager gameManager;
+    public int range;
     public string id;
+    public GameManager gameManager;
 
-    private bool isSelected = false;
-    // Hint-System
-    private bool isHinted = false;
-    private Color hintColor = new Color(0.2f, 1f, 0.2f, 1f); // Helles Grün
-
-    private Color originalColor;
+    [Header("Visual")]
     private SpriteRenderer spriteRenderer;
-    private MeshRenderer meshRenderer;  // NEU: Für 3D
+    private MeshRenderer meshRenderer;
+    private Color originalColor;
+    private bool isSelected = false;
 
-    // Neu: Text für Range-Anzeige
+    [Header("Range Display")]
     private TextMesh rangeText;
 
-    // Smooth Movement
+    [Header("Smooth Movement")]
+    public float moveSpeed = 8f;
+    public float hoverHeight = 0.3f;
     private bool isMoving = false;
-    public float moveSpeed = 8f; // Geschwindigkeit – im Inspector anpassbar
-    public float hoverHeight = 0.3f; // Wie hoch die Figur sich anhebt
 
+    [Header("Board Reference")]
+    public BoardRenderer boardRenderer;
+
+    [Header("Hint System")]
+    private bool isHinted = false;
+    private Color hintColor = new Color(0.2f, 1f, 0.2f, 1f);
 
     void Start()
     {
-        // Versuche erst SpriteRenderer (2D), dann MeshRenderer (3D)
         spriteRenderer = GetComponent<SpriteRenderer>();
         if (spriteRenderer != null)
         {
@@ -39,7 +42,6 @@ public class Piece : MonoBehaviour
         }
         else
         {
-            // In 3D: MeshRenderer verwenden
             meshRenderer = GetComponent<MeshRenderer>();
             if (meshRenderer != null)
             {
@@ -47,48 +49,69 @@ public class Piece : MonoBehaviour
             }
         }
 
-        // Range-Text erstellen
+        // BoardRenderer automatisch finden falls nicht zugewiesen
+        if (boardRenderer == null && gameManager != null)
+        {
+            boardRenderer = gameManager.boardRenderer;
+        }
+
         CreateRangeDisplay();
     }
 
     void OnMouseDown()
     {
-        // Ignoriere Klicks auf zerstörte/inaktive Figuren
         if (gameManager == null) return;
         if (this == null || gameObject == null) return;
 
-        // Prüfe, ob diese Figur noch in der aktiven pieces-Liste ist
         if (!gameManager.IsPieceActive(this))
         {
-            Debug.LogWarning($"⚠️ Klick auf veraltete Figur {id} ignoriert!");
+            Debug.LogWarning($"Klick auf veraltete Figur {id} ignoriert!");
             return;
         }
 
         gameManager.OnTileClicked(row, column);
     }
 
-
     public void SetSelected(bool selected)
     {
         isSelected = selected;
         UpdateVisualState();
-
-        // Stelle sicher, dass Z-Position korrekt bleibt (wichtig für 2D!)
-        if (spriteRenderer != null) // 2D-Modus
-        {
-            Vector3 pos = transform.position;
-            pos.z = -0.1f; // Vor den Tiles
-            transform.position = pos;
-        }
     }
 
+    public void SetHintHighlight(bool active)
+    {
+        isHinted = active;
+        UpdateVisualState();
+    }
+
+    private void UpdateVisualState()
+    {
+        if (spriteRenderer != null)
+        {
+            if (isHinted)
+                spriteRenderer.color = hintColor;
+            else if (isSelected)
+                spriteRenderer.color = new Color(1f, 0.6f, 0f); // Orange statt Weiß
+            else
+                spriteRenderer.color = originalColor;
+        }
+        else if (meshRenderer != null)
+        {
+            if (isHinted)
+                meshRenderer.material.color = hintColor;
+            else if (isSelected)
+                meshRenderer.material.color = new Color(1f, 0.6f, 0f); // Orange statt Weiß
+            else
+                meshRenderer.material.color = originalColor;
+        }
+    }
 
 
     public void UpdateRange(int interpretedGridValue, PieceType type)
     {
         if (type == PieceType.Shogun)
         {
-            range = interpretedGridValue >= 3 ? 2 : 1;
+            range = (interpretedGridValue >= 3) ? 2 : 1;
         }
         else
         {
@@ -96,35 +119,25 @@ public class Piece : MonoBehaviour
         }
 
         Debug.Log($"Piece {id} - Range aktualisiert: {range} (basierend auf GridValue {interpretedGridValue})");
-
-        // Text aktualisieren
         UpdateRangeDisplay();
     }
 
-    // Erstellt die Range-Anzeige als TextMesh
-    // Erstellt die Range-Anzeige als TextMesh
-    // Erstellt die Range-Anzeige als TextMesh
-    // Erstellt die Range-Anzeige als TextMesh
     void CreateRangeDisplay()
     {
-        // Neues GameObject als Kind erstellen
         GameObject textObj = new GameObject("RangeText");
         textObj.transform.parent = this.transform;
 
-        // HYBRID: Position je nach 2D oder 3D
         if (spriteRenderer != null)
         {
-            // 2D: Leicht vor dem Piece (z-Achse negativ = nach vorne zur Kamera)
             textObj.transform.localPosition = new Vector3(0, 0, -0.1f);
         }
         else
         {
-            // 3D auf XY-Ebene: Zur Kamera hin (z-Achse negativ)
-            textObj.transform.localPosition = new Vector3(0, 0, -0.5f);  // NEGATIV!
-            textObj.transform.localRotation = Quaternion.identity;
+            textObj.transform.localPosition = new Vector3(0, 0, -0.5f);
         }
 
-        // TextMesh Component hinzufügen
+        textObj.transform.localRotation = Quaternion.identity;
+
         rangeText = textObj.AddComponent<TextMesh>();
         rangeText.text = range.ToString();
         rangeText.fontSize = 50;
@@ -133,7 +146,6 @@ public class Piece : MonoBehaviour
         rangeText.alignment = TextAlignment.Center;
         rangeText.characterSize = 0.1f;
 
-        // MeshRenderer für Sichtbarkeit
         MeshRenderer mr = textObj.GetComponent<MeshRenderer>();
         if (mr != null)
         {
@@ -141,10 +153,6 @@ public class Piece : MonoBehaviour
         }
     }
 
-
-
-
-    // Aktualisiert die Range-Anzeige
     void UpdateRangeDisplay()
     {
         if (rangeText != null)
@@ -152,116 +160,79 @@ public class Piece : MonoBehaviour
             rangeText.text = range.ToString();
         }
     }
-    /// <summary>
-    /// Bewegt die Figur smooth zur Zielposition mit Anheben
-    /// </summary>
-    /// <summary>
-    /// Bewegt die Figur smooth zur Zielposition mit Anheben
-    /// </summary>
+
     public IEnumerator MoveTo(int targetRow, int targetCol)
     {
+        if (this == null || gameObject == null || boardRenderer == null)
+        {
+            yield break;
+        }
+
         isMoving = true;
 
-        // Globale Werte vom OptionsManager holen
         float speed = OptionsManager.Instance != null ? OptionsManager.Instance.globalMoveSpeed : moveSpeed;
         float hover = OptionsManager.Instance != null ? OptionsManager.Instance.globalHoverHeight : hoverHeight;
 
         Vector3 startPos = transform.position;
-        Vector3 endPos = gameManager.boardRenderer.GetWorldPosition(targetRow, targetCol);
+        Vector3 endPos = boardRenderer.GetWorldPosition(targetRow, targetCol);
 
-        // Z-Position korrekt setzen (2D vs 3D)
         if (spriteRenderer != null)
         {
-            endPos.z = -0.1f; // 2D
+            endPos.z = -0.1f;
         }
         else
         {
-            endPos.z = startPos.z; // 3D – Z beibehalten
+            endPos.z = startPos.z;
         }
 
-        // Mittelpunkt berechnen (für den "Bogen")
         Vector3 midPos = (startPos + endPos) / 2f;
-
-        // In 3D: Anheben auf Z-Achse (zur Kamera hin)
-        // In 2D: Anheben auf Z-Achse (nach vorne)
         midPos.z -= hover;
 
-        // GEÄNDERT: Feste Dauer für alle, Distanz spielt keine Rolle mehr
         float duration = 1.0f / speed;
+        float elapsed = 0f;
 
-        float elapsed = 0f;  // <-- DIESE ZEILE FEHLTE!
-
-        // Phase 1: Anheben + zur Mitte bewegen (50% der Zeit)
         while (elapsed < duration / 2f)
         {
+            if (this == null || gameObject == null)
+            {
+                yield break;
+            }
+
             elapsed += Time.deltaTime;
-            float t = (elapsed / (duration / 2f));
+            float t = elapsed / (duration / 2f);
             transform.position = Vector3.Lerp(startPos, midPos, t);
             yield return null;
         }
 
-        // Phase 2: Absenken + zum Ziel bewegen (50% der Zeit)
         elapsed = 0f;
         while (elapsed < duration / 2f)
         {
+            if (this == null || gameObject == null)
+            {
+                yield break;
+            }
+
             elapsed += Time.deltaTime;
-            float t = (elapsed / (duration / 2f));
+            float t = elapsed / (duration / 2f);
             transform.position = Vector3.Lerp(midPos, endPos, t);
             yield return null;
         }
 
-        // Exakte Endposition
-        transform.position = endPos;
+        if (this != null && gameObject != null)
+        {
+            transform.position = endPos;
+        }
+
         isMoving = false;
     }
-
 
     public bool IsMoving()
     {
         return isMoving;
     }
-    /// <summary>
-    /// Setzt Hint-Highlighting für diese Figur
-    /// </summary>
-    public void SetHintHighlight(bool active)
+
+    void OnDestroy()
     {
-        isHinted = active;
-        UpdateVisualState();
+        StopAllCoroutines();
     }
-
-    /// <summary>
-    /// Aktualisiert die visuelle Darstellung basierend auf Zustand
-    /// </summary>
-    private void UpdateVisualState()
-    {
-        if (spriteRenderer != null) // 2D
-        {
-            if (isHinted)
-                spriteRenderer.color = hintColor;
-            else if (isSelected)
-                spriteRenderer.color = new Color(1f, 0.6f, 0f); // Orange
-            else
-                spriteRenderer.color = originalColor;
-
-            // Z-Position fix
-            Vector3 pos = transform.position;
-            pos.z = -0.1f;
-            transform.position = pos;
-        }
-        else // 3D
-        {
-            MeshRenderer mr = GetComponent<MeshRenderer>();
-            if (mr != null)
-            {
-                if (isHinted)
-                    mr.material.color = hintColor;
-                else if (isSelected)
-                    mr.material.color = new Color(1f, 0.6f, 0f); // Orange
-                else
-                    mr.material.color = originalColor;
-            }
-        }
-    }
-
-
 }

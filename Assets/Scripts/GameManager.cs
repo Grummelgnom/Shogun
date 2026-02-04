@@ -715,9 +715,13 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            boardRenderer.ClearHighlights(); // Falls vorher an war
+            boardRenderer.ClearHighlights();
         }
     }
+
+
+
+
 
 
     public void DeselectPiece()
@@ -1216,6 +1220,45 @@ public class GameManager : MonoBehaviour
 
         // Prüfe, ob die Figur in der pieces-Dictionary ist
         return pieces.ContainsKey(piece.id) && pieces[piece.id] == piece;
+    }
+    /// <summary>
+    /// Aktualisiert Highlighting basierend auf aktueller Einstellung
+    /// </summary>
+    public void RefreshHighlightingState()
+    {
+        if (selectedPiece != null && validMoves != null && validMoves.Count > 0)
+        {
+            // Prüfe aktuelle Einstellung
+            if (OptionsManager.Instance != null && OptionsManager.Instance.highlightingEnabled)
+            {
+                // Highlighting AN → Zeige Züge
+                boardRenderer.HighlightValidMoves(validMoves);
+            }
+            else
+            {
+                // Highlighting AUS → Lösche Highlights
+                boardRenderer.ClearHighlights();
+            }
+        }
+    }
+   
+    /// <summary>
+    /// Erzwingt Highlighting-Refresh (für Options-Toggle)
+    /// </summary>
+    public void ForceRefreshHighlights()
+    {
+        if (selectedPiece != null && validMoves != null && validMoves.Count > 0)
+        {
+            // Prüfe aktuelle Einstellung
+            if (OptionsManager.Instance != null && OptionsManager.Instance.highlightingEnabled)
+            {
+                boardRenderer.HighlightValidMoves(validMoves);
+            }
+            else
+            {
+                boardRenderer.ClearHighlights();
+            }
+        }
     }
 
 }
