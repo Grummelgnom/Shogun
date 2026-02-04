@@ -527,6 +527,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   globalMoveSpeed: 8
   globalHoverHeight: 0.3
+  highlightingEnabled: 1
 --- !u!4 &113778036
 Transform:
   m_ObjectHideFlags: 0
@@ -823,6 +824,7 @@ MonoBehaviour:
   resultText: {fileID: 456515011}
   mainMenuSceneName: MainMenu
   mainSceneName: MainScene
+  hintButton: {fileID: 0}
 --- !u!4 &306021202
 Transform:
   m_ObjectHideFlags: 0
@@ -2525,6 +2527,7 @@ MonoBehaviour:
   pausePanel: {fileID: 570297083}
   mainMenuSceneName: MainMenu
   mainSceneName: MainScene
+  gameUIController: {fileID: 0}
 --- !u!4 &1068292124
 Transform:
   m_ObjectHideFlags: 0
@@ -3918,6 +3921,7 @@ MonoBehaviour:
   mainCamera: {fileID: 2098355934}
   gameManager: {fileID: 427685193}
   boardRenderer: {fileID: 448284584}
+  buttonText: {fileID: 0}
   tile2DPrefab: {fileID: 7579386748276705544, guid: b9a1cb43ea2bfba4a9354ca85d6b3ed3, type: 3}
   p1Normal2DPrefab: {fileID: 7367992893990249812, guid: d3b54f08a3aa8774fb5c1eaa5917b11b, type: 3}
   p1Shogun2DPrefab: {fileID: 5771174678213792516, guid: 204853396e7be4943aae2d107a8ef44a, type: 3}
@@ -4112,6 +4116,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   optionsPanel: {fileID: 428591569}
+  gameUIController: {fileID: 0}
 --- !u!4 &2015567318
 Transform:
   m_ObjectHideFlags: 0

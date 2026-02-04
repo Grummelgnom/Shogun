@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic; // NEU
 
 public class OptionsManager : MonoBehaviour
 {
@@ -11,6 +12,36 @@ public class OptionsManager : MonoBehaviour
 
     [Range(0.1f, 2f)]
     public float globalHoverHeight = 0.3f;
+
+    [Header("Gameplay Settings")]
+    public bool highlightingEnabled = false; // Default aus
+
+    public void SetHighlighting(bool enabled)
+    {
+        highlightingEnabled = enabled;
+        Debug.Log($"Highlighting: {(enabled ? "An" : "Aus")}");
+
+        // Sofort aktualisieren, wenn eine Figur ausgewählt ist
+        GameManager gm = FindObjectOfType<GameManager>();
+        if (gm != null)
+        {
+            Piece selected = gm.GetSelectedPiece();
+            if (selected != null)
+            {
+                if (enabled)
+                {
+                    // Highlighting einschalten: Zeige gültige Züge
+                    List<ValidMove> moves = gm.CalculateValidMoves(selected);
+                    gm.GetBoardRenderer().HighlightValidMoves(moves);
+                }
+                else
+                {
+                    // Highlighting ausschalten: Lösche alle Highlights
+                    gm.GetBoardRenderer().ClearHighlights();
+                }
+            }
+        }
+    }
 
     void Awake()
     {

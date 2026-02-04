@@ -707,8 +707,18 @@ public class GameManager : MonoBehaviour
         selectedPiece.SetSelected(true);
 
         validMoves = CalculateValidMoves(piece);
-        boardRenderer.HighlightValidMoves(validMoves);
+
+        // Highlighting nur wenn aktiviert
+        if (OptionsManager.Instance == null || OptionsManager.Instance.highlightingEnabled)
+        {
+            boardRenderer.HighlightValidMoves(validMoves);
+        }
+        else
+        {
+            boardRenderer.ClearHighlights(); // Falls vorher an war
+        }
     }
+
 
     public void DeselectPiece()
     {
