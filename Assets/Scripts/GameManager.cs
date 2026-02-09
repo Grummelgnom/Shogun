@@ -50,7 +50,7 @@ public class GameManager : MonoBehaviour
     private List<ValidMove> validMoves = new List<ValidMove>();
     private int winner = 0;
     public int turnCount = 0; // Jetzt public für StatsUI
-
+    public AudioSource winAudio;
 
     [Header("AI (single settings apply to both AIs)")]
     public int aiPlayer = 2;                 // in VsAI: welcher Player ist die KI
@@ -758,6 +758,7 @@ public class GameManager : MonoBehaviour
             {
                 winner = currentPlayer;
                 Debug.Log($"Spieler {winner} GEWINNT! Shogun geschlagen!");
+                winAudio.Play();
                 DeselectPiece();
                 yield break;
             }

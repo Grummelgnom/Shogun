@@ -5,6 +5,7 @@ using TMPro;
 public class GameUIController : MonoBehaviour
 {
     [SerializeField] private GameManager gameManager;
+    [SerializeField] private AudioSource applausAudio;  // NEU: Drag GameManager's Applaus-Source rein
     [SerializeField] private GameObject gameOverPanel;
     [SerializeField] private TMP_Text resultText;
 
@@ -35,10 +36,20 @@ public class GameUIController : MonoBehaviour
             if (gameOverPanel != null) gameOverPanel.SetActive(true);
             if (resultText != null) resultText.text = $"Spieler {winner} gewinnt!";
 
-            // Hint Button bei Game Over ausblenden
+            // NEU: Applaus bei PvAI-Sieg (Player=1)
+            if (winner == 1 && gameManager.mode == GameMode.VsAI)
+            {  // Passe GameMode an dein Enum an
+                if (applausAudio != null)
+                {
+                    applausAudio.Play();
+                    Debug.Log("Applaus triggered bei Player-Sieg!");
+                }
+            }
+
             SetHintButtonVisible(false);
         }
     }
+
 
     /// <summary>
     /// Steuert die Sichtbarkeit des Hint Buttons
@@ -47,15 +58,18 @@ public class GameUIController : MonoBehaviour
     {
         if (hintButton != null)
             hintButton.SetActive(visible);
+        
     }
 
     public void Restart()
     {
         SceneManager.LoadScene(mainSceneName);
+        
     }
 
     public void BackToMenu()
     {
         SceneManager.LoadScene(mainMenuSceneName);
+        
     }
 }
