@@ -35,7 +35,7 @@ public class GameUIController : MonoBehaviour
             shown = true;
             if (gameOverPanel != null) gameOverPanel.SetActive(true);
             if (resultText != null) resultText.text = $"Spieler {winner} gewinnt!";
-
+            
             // NEU: Applaus bei PvAI-Sieg (Player=1)
             if (winner == 1 && gameManager.mode == GameMode.VsAI)
             {  // Passe GameMode an dein Enum an
