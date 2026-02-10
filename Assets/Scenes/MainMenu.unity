@@ -2775,8 +2775,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   uiAudioSource: {fileID: 2059376385}
+  musicSource: {fileID: 2059376385}
   buttonHoverClip: {fileID: 8300000, guid: d707138604a57c647bf3677ae9c72cc3, type: 3}
   buttonClickClip: {fileID: 8300000, guid: d707138604a57c647bf3677ae9c72cc3, type: 3}
+  backgroundMusic: {fileID: 8300000, guid: 498e3b51173546d449d49e4ee08f9ce0, type: 3}
 --- !u!82 &2059376385
 AudioSource:
   m_ObjectHideFlags: 0
