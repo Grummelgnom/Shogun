@@ -58,7 +58,7 @@ public class Piece : MonoBehaviour
         CreateRangeDisplay();
     }
 
-    void OnMouseDown()
+    public void OnMouseDown()
     {
         if (gameManager == null) return;
         if (this == null || gameObject == null) return;
@@ -86,25 +86,39 @@ public class Piece : MonoBehaviour
 
     private void UpdateVisualState()
     {
-        if (spriteRenderer != null)
+        if (spriteRenderer != null) // 2D bleibt unverändert
         {
             if (isHinted)
                 spriteRenderer.color = hintColor;
             else if (isSelected)
-                spriteRenderer.color = new Color(1f, 0.6f, 0f); // Orange statt Weiß
+                spriteRenderer.color = new Color(1f, 0.6f, 0f); // Orange
             else
                 spriteRenderer.color = originalColor;
         }
-        else if (meshRenderer != null)
+        else // 3D - ALLE MeshRenderer außer RangeText
         {
+            MeshRenderer[] allRenderers = GetComponentsInChildren<MeshRenderer>();
+
+            Color targetColor;
             if (isHinted)
-                meshRenderer.material.color = hintColor;
+                targetColor = hintColor;
             else if (isSelected)
-                meshRenderer.material.color = new Color(1f, 0.6f, 0f); // Orange statt Weiß
+                targetColor = new Color(1f, 0.6f, 0f); // Orange
             else
-                meshRenderer.material.color = originalColor;
+                targetColor = originalColor;
+
+            // Färbe alle Cubes, aber NICHT den RangeText!
+            foreach (MeshRenderer mr in allRenderers)
+            {
+                // Überspringe den RangeText-Renderer
+                if (mr.gameObject.name == "RangeText") continue;
+
+                mr.material.color = targetColor;
+            }
         }
     }
+
+
 
 
     public void UpdateRange(int interpretedGridValue, PieceType type)

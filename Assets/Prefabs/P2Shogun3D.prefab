@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 5847955166776099129}
   - component: {fileID: 4073718090350880394}
   - component: {fileID: 1993504798522736648}
+  - component: {fileID: 3428968977854923320}
   m_Layer: 0
   m_Name: P2Shogun3D
   m_TagString: Untagged
@@ -108,6 +109,18 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &3428968977854923320
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2722179400119393628}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e43c3677da46ab34e9e2104341d35a0c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &3652946256224794470
 GameObject:
   m_ObjectHideFlags: 0
