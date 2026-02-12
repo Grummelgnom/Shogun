@@ -72,6 +72,24 @@ public class Piece : MonoBehaviour
         gameManager.OnTileClicked(row, column);
     }
 
+    void OnMouseEnter()
+    {
+        // Nur Hover-Sound, wenn die Figur dem aktuellen Spieler gehört
+        if (gameManager == null) return;
+
+        // Prüfe, ob es der Spieler am Zug ist
+        if (owner == gameManager.GetCurrentPlayer())
+        {
+            // Sound abspielen
+            if (UISoundManager.Instance != null)
+            {
+                UISoundManager.Instance.PlayButtonHover();  // ← Richtige Methode!
+            }
+        }
+    }
+
+
+
     public void SetSelected(bool selected)
     {
         isSelected = selected;
@@ -187,6 +205,19 @@ public class Piece : MonoBehaviour
         float speed = OptionsManager.Instance != null ? OptionsManager.Instance.globalMoveSpeed : moveSpeed;
         float hover = OptionsManager.Instance != null ? OptionsManager.Instance.globalHoverHeight : hoverHeight;
 
+        // ===== BEWEGUNGS-SOUND ABSPIELEN =====
+        if (UISoundManager.Instance != null)
+        {
+            // Pitch basierend auf Range: Range 1 → 0.85, Range 4 → 1.15
+            float pitchModifier = 0.85f + (range * 0.075f);
+
+            // Volume basierend auf Hover-Höhe: höher = lauter
+            float volumeModifier = 0.3f + (hover * 0.25f);
+
+            UISoundManager.Instance.PlayPieceMoveSound(pitchModifier, volumeModifier);
+        }
+        // ===== SOUND ENDE =====
+
         Vector3 startPos = transform.position;
         Vector3 endPos = boardRenderer.GetWorldPosition(targetRow, targetCol);
 
@@ -240,13 +271,4 @@ public class Piece : MonoBehaviour
         isMoving = false;
     }
 
-    public bool IsMoving()
-    {
-        return isMoving;
-    }
-
-    void OnDestroy()
-    {
-        StopAllCoroutines();
-    }
 }

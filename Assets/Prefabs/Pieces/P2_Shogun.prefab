@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 7516803661449851736}
   - component: {fileID: 707299493118363211}
   - component: {fileID: 5152342131109527375}
+  - component: {fileID: -4480030896160261144}
   m_Layer: 0
   m_Name: P2_Shogun
   m_TagString: Untagged
@@ -101,7 +102,33 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   owner: 0
-  isShogun: 0
+  pieceType: 0
   row: 0
   column: 0
+  range: 0
+  id: 
   gameManager: {fileID: 0}
+  moveSpeed: 8
+  hoverHeight: 0.3
+  boardRenderer: {fileID: 0}
+--- !u!65 &-4480030896160261144
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5484922906228182161}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 0.2}
+  m_Center: {x: 0, y: 0.21133333, z: 0}

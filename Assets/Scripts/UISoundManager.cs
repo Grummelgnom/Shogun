@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 
 public class UISoundManager : MonoBehaviour
 {
@@ -112,4 +113,36 @@ public class UISoundManager : MonoBehaviour
             musicSource.Play();
         }
     }
+
+    [Header("Game Sounds")]
+    [SerializeField] private AudioClip pieceMoveClip; // NEU
+
+    /// <summary>
+    /// Spielt Bewegungs-Sound mit dynamischem Pitch (Tonhöhe)
+    /// </summary>
+    public void PlayPieceMoveSound(float pitch = 1f, float volume = 0.4f)
+    {
+        if (pieceMoveClip != null && uiAudioSource != null)
+        {
+            // Pitch temporär ändern
+            float originalPitch = uiAudioSource.pitch;
+            uiAudioSource.pitch = pitch;
+
+            // Sound abspielen
+            uiAudioSource.PlayOneShot(pieceMoveClip, volume);
+
+            // Pitch zurücksetzen (nach Sound-Länge)
+            StartCoroutine(ResetPitchAfterDelay(originalPitch, pieceMoveClip.length));
+        }
+    }
+
+    private IEnumerator ResetPitchAfterDelay(float originalPitch, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (uiAudioSource != null)
+        {
+            uiAudioSource.pitch = originalPitch;
+        }
+    }
+
 }
