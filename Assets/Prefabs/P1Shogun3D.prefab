@@ -144,7 +144,6 @@ GameObject:
   - component: {fileID: 7272599563892196808}
   - component: {fileID: 3210119208508775720}
   - component: {fileID: 722484734735111748}
-  - component: {fileID: 1788274260263410776}
   m_Layer: 0
   m_Name: P1Shogun3D
   m_TagString: Untagged
@@ -241,25 +240,3 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &1788274260263410776
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5249470377455322493}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b0359d49a07206f4884aa0d73792ff2b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  owner: 0
-  pieceType: 0
-  row: 0
-  column: 0
-  range: 0
-  id: 
-  gameManager: {fileID: 0}
-  moveSpeed: 8
-  hoverHeight: 0.3
-  boardRenderer: {fileID: 0}
