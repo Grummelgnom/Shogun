@@ -2781,6 +2781,7 @@ MonoBehaviour:
   backgroundMusic: {fileID: 8300000, guid: 498e3b51173546d449d49e4ee08f9ce0, type: 3}
   pieceMoveClip: {fileID: 8300000, guid: 3e757cb7f10fc0243add992d8c67c16a, type: 3}
   pieceCaptureClip: {fileID: 8300000, guid: 7af0023c22368ec4e86a8c8620bf579a, type: 3}
+  checkWarningClip: {fileID: 8300000, guid: 1b89317806155184fa38243be9713225, type: 3}
 --- !u!82 &2059376385
 AudioSource:
   m_ObjectHideFlags: 0

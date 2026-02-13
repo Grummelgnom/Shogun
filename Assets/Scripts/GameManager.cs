@@ -733,6 +733,7 @@ public class GameManager : MonoBehaviour
     }
 
     // GEÄNDERT: ExecuteMove ist jetzt IEnumerator!
+    // GEÄNDERT: ExecuteMove ist jetzt IEnumerator!
     public IEnumerator ExecuteMove(ValidMove move)
     {
         if (winner != 0) yield break;
@@ -746,13 +747,11 @@ public class GameManager : MonoBehaviour
         movingPiece.column = move.to.column;
 
         // Figur bewegen – SMOOTH mit Animation!
-        // WICHTIG: yield return wartet, bis Animation fertig ist!
         yield return StartCoroutine(MovePieceAnimated(movingPiece, move.to.row, move.to.column));
 
-        // CAPTURE-SOUND ABSPIELEN – genau nach der Animation!
+        // CAPTURE-SOUND
         if (targetPiece != null)
         {
-            // Sound VOR dem Destroy, damit er sicher abgespielt wird
             if (UISoundManager.Instance != null)
             {
                 UISoundManager.Instance.PlayCaptureSound();
@@ -778,6 +777,18 @@ public class GameManager : MonoBehaviour
         turnCount++;
 
         int nextPlayer = currentPlayer == 1 ? 2 : 1;
+
+        // ========== NEU: CHECK-WARNING HIER! ==========
+        if (IsPlayerInCheck(nextPlayer))
+        {
+            Debug.Log($"⚠️ CHECK! Spieler {nextPlayer} Shogun ist bedroht!");
+
+            if (UISoundManager.Instance != null)
+            {
+                UISoundManager.Instance.PlayCheckWarning();
+            }
+        }
+        // ===============================================
 
         // Notbremse für AI vs AI
         if (mode == GameMode.VsAI && aiVsAi && turnCount >= aiVsAiMaxTurns)
@@ -813,6 +824,7 @@ public class GameManager : MonoBehaviour
             if (aiTurn) StartCoroutine(AIMakeMove());
         }
     }
+
 
 
     // =============================

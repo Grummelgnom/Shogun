@@ -103,9 +103,8 @@ public class UISoundManager : MonoBehaviour
         }
     }
 
-    /// <summary>
     /// Startet die Musik neu
-    /// </summary>
+    
     public void ResumeMusic()
     {
         if (musicSource != null && !musicSource.isPlaying)
@@ -115,11 +114,20 @@ public class UISoundManager : MonoBehaviour
     }
 
     [Header("Game Sounds")]
-    [SerializeField] private AudioClip pieceMoveClip; // NEU
+    [SerializeField] private AudioClip pieceMoveClip; 
     [SerializeField] private AudioClip pieceCaptureClip;
-    /// <summary>
+    [SerializeField] private AudioClip checkWarningClip;
+
+    public void PlayCheckWarning(float volume = 0.7f)
+    {
+        if (checkWarningClip != null && uiAudioSource != null)
+        {
+            uiAudioSource.PlayOneShot(checkWarningClip, volume);
+        }
+    }
+
     /// Spielt Bewegungs-Sound mit dynamischem Pitch (Tonhöhe)
-    /// </summary>
+
     public void PlayPieceMoveSound(float pitch = 1f, float volume = 0.4f)
     {
         if (pieceMoveClip != null)
