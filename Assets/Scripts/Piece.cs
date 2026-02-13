@@ -208,13 +208,8 @@ public class Piece : MonoBehaviour
         // ===== BEWEGUNGS-SOUND ABSPIELEN =====
         if (UISoundManager.Instance != null)
         {
-            // Pitch basierend auf Range: Range 1 → 0.85, Range 4 → 1.15
-            float pitchModifier = 0.85f + (range * 0.075f);
-
-            // Volume basierend auf Hover-Höhe: höher = lauter
-            float volumeModifier = 0.3f + (hover * 0.25f);
-
-            UISoundManager.Instance.PlayPieceMoveSound(pitchModifier, volumeModifier);
+            
+            UISoundManager.Instance.PlayPieceMoveSound(0.4f);
         }
         // ===== SOUND ENDE =====
 

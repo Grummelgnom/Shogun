@@ -749,8 +749,15 @@ public class GameManager : MonoBehaviour
         // WICHTIG: yield return wartet, bis Animation fertig ist!
         yield return StartCoroutine(MovePieceAnimated(movingPiece, move.to.row, move.to.column));
 
+        // CAPTURE-SOUND ABSPIELEN – genau nach der Animation!
         if (targetPiece != null)
         {
+            // Sound VOR dem Destroy, damit er sicher abgespielt wird
+            if (UISoundManager.Instance != null)
+            {
+                UISoundManager.Instance.PlayCaptureSound();
+            }
+
             pieces.Remove(targetPiece.id);
             Destroy(targetPiece.gameObject);
 
@@ -775,7 +782,7 @@ public class GameManager : MonoBehaviour
         // Notbremse für AI vs AI
         if (mode == GameMode.VsAI && aiVsAi && turnCount >= aiVsAiMaxTurns)
         {
-            winner = nextPlayer; // willkürlich, damit es endet
+            winner = nextPlayer;
             Debug.LogWarning($"AI-vs-AI Notbremse: max turns {aiVsAiMaxTurns} erreicht.");
             yield break;
         }
@@ -799,15 +806,14 @@ public class GameManager : MonoBehaviour
 
         currentPlayer = nextPlayer;
 
-        // Auto-KI Trigger:
-        // - VsAI: wenn currentPlayer == aiPlayer
-        // - AIvsAI: immer (solange winner==0)
+        // Auto-KI Trigger
         if (mode == GameMode.VsAI && winner == 0 && !aiIsThinking)
         {
             bool aiTurn = aiVsAi || (currentPlayer == aiPlayer);
             if (aiTurn) StartCoroutine(AIMakeMove());
         }
     }
+
 
     // =============================
     // AI

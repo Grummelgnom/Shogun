@@ -116,33 +116,40 @@ public class UISoundManager : MonoBehaviour
 
     [Header("Game Sounds")]
     [SerializeField] private AudioClip pieceMoveClip; // NEU
-
+    [SerializeField] private AudioClip pieceCaptureClip;
     /// <summary>
     /// Spielt Bewegungs-Sound mit dynamischem Pitch (Tonhöhe)
     /// </summary>
     public void PlayPieceMoveSound(float pitch = 1f, float volume = 0.4f)
     {
-        if (pieceMoveClip != null && uiAudioSource != null)
+        if (pieceMoveClip != null)
         {
-            // Pitch temporär ändern
-            float originalPitch = uiAudioSource.pitch;
-            uiAudioSource.pitch = pitch;
+            // Erstelle temporäre AudioSource NUR für diesen Sound
+            GameObject tempGO = new GameObject("TempMoveSound");
+            AudioSource tempSource = tempGO.AddComponent<AudioSource>();
 
-            // Sound abspielen
-            uiAudioSource.PlayOneShot(pieceMoveClip, volume);
+            // Konfiguriere
+            tempSource.clip = pieceMoveClip;
+            tempSource.volume = volume;
+            tempSource.pitch = pitch;
+            tempSource.spatialBlend = 0f; // 2D Sound
 
-            // Pitch zurücksetzen (nach Sound-Länge)
-            StartCoroutine(ResetPitchAfterDelay(originalPitch, pieceMoveClip.length));
+            // Abspielen
+            tempSource.Play();
+
+            // Automatisch aufräumen nach Sound-Ende
+            Destroy(tempGO, pieceMoveClip.length / pitch);
         }
     }
 
-    private IEnumerator ResetPitchAfterDelay(float originalPitch, float delay)
+    public void PlayCaptureSound(float volume = 0.6f)
     {
-        yield return new WaitForSeconds(delay);
-        if (uiAudioSource != null)
+        if (pieceCaptureClip != null && uiAudioSource != null)
         {
-            uiAudioSource.pitch = originalPitch;
+            uiAudioSource.PlayOneShot(pieceCaptureClip, volume);
         }
     }
+
+    
 
 }
