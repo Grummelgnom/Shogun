@@ -4363,6 +4363,22 @@ PrefabInstance:
       propertyPath: boardRenderer
       value: 
       objectReference: {fileID: 203994836}
+    - target: {fileID: 1664094895183157829, guid: 5ea23b5dacf322e4bb26178e1cebd68b, type: 3}
+      propertyPath: shogunExplosionScale
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 1664094895183157829, guid: 5ea23b5dacf322e4bb26178e1cebd68b, type: 3}
+      propertyPath: normalExplosionDuration
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1664094895183157829, guid: 5ea23b5dacf322e4bb26178e1cebd68b, type: 3}
+      propertyPath: shogunExplosionDuration
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1664094895183157829, guid: 5ea23b5dacf322e4bb26178e1cebd68b, type: 3}
+      propertyPath: normalPieceExplosionScale
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 2329405821237432308, guid: 5ea23b5dacf322e4bb26178e1cebd68b, type: 3}
       propertyPath: m_Name
       value: GameManager

@@ -2779,6 +2779,9 @@ MonoBehaviour:
   buttonHoverClip: {fileID: 8300000, guid: 2615c08e4dc9c2543afe2504b293f6bf, type: 3}
   buttonClickClip: {fileID: 8300000, guid: bcfe3a591c8c562478768988657ec79a, type: 3}
   backgroundMusic: {fileID: 8300000, guid: 498e3b51173546d449d49e4ee08f9ce0, type: 3}
+  smallExplosionClip: {fileID: 8300000, guid: 6f03b8ab43182fe439e7a5693b33af1e, type: 3}
+  bigExplosionClip: {fileID: 8300000, guid: 7af0023c22368ec4e86a8c8620bf579a, type: 3}
+  victoryClip: {fileID: 8300000, guid: feb09086c2cbbbe4c8af30ac22c5dd65, type: 3}
   pieceMoveClip: {fileID: 8300000, guid: 3e757cb7f10fc0243add992d8c67c16a, type: 3}
   pieceCaptureClip: {fileID: 8300000, guid: 7af0023c22368ec4e86a8c8620bf579a, type: 3}
   checkWarningClip: {fileID: 8300000, guid: 1b89317806155184fa38243be9713225, type: 3}

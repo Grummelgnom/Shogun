@@ -18,6 +18,8 @@ public enum GameMode
 
 public class GameManager : MonoBehaviour
 {
+    
+    
     [Header("Board")]
     public int rows = 8;
     public int columns = 8;
@@ -61,6 +63,38 @@ public class GameManager : MonoBehaviour
     [Header("AI vs AI")]
     public bool aiVsAi = false;              // aus GameSettings.AIVsAI
     public int aiVsAiMaxTurns = 400;         // Notbremse
+    [Header("Victory Explosion")]
+    [Tooltip("Wie groß normale Figuren aufgebläht werden (Multiplikator)")]
+    [Range(1.0f, 3.0f)]
+    public float normalPieceExplosionScale = 1.5f;
+
+    [Tooltip("Wie groß der Shogun aufgebläht wird (Multiplikator)")]
+    [Range(1.5f, 5.0f)]
+    public float shogunExplosionScale = 2.5f;
+
+    [Tooltip("Dauer der Aufbläh-Animation für normale Figuren (Sekunden)")]
+    [Range(0.1f, 1.0f)]
+    public float normalExplosionDuration = 0.3f;
+
+    [Tooltip("Dauer der Aufbläh-Animation für Shogun (Sekunden)")]
+    [Range(0.2f, 2.0f)]
+    public float shogunExplosionDuration = 0.5f;
+
+    [Tooltip("Pause zwischen einzelnen Explosionen (Sekunden)")]
+    [Range(0.05f, 0.5f)]
+    public float explosionDelay = 0.15f;
+
+    [Tooltip("Pause vor Shogun-Explosion (dramatischer Moment, Sekunden)")]
+    [Range(0.1f, 1.0f)]
+    public float shogunPauseDuration = 0.3f;
+
+    [Tooltip("Wie weit Figuren nach oben schweben während Explosion (Unity-Units)")]
+    [Range(0.0f, 3.0f)]
+    public float explosionFloatHeight = 0.5f;
+
+    [Tooltip("Extra Schwebe-Höhe für Shogun (zusätzlich zu normalem Float)")]
+    [Range(0.0f, 2.0f)]
+    public float shogunExtraFloatHeight = 0.5f;
 
     // ===== Simulation Undo Stack (Fix) =====
     private struct SimStep
@@ -733,7 +767,6 @@ public class GameManager : MonoBehaviour
     }
 
     // GEÄNDERT: ExecuteMove ist jetzt IEnumerator!
-    // GEÄNDERT: ExecuteMove ist jetzt IEnumerator!
     public IEnumerator ExecuteMove(ValidMove move)
     {
         if (winner != 0) yield break;
@@ -760,12 +793,17 @@ public class GameManager : MonoBehaviour
             pieces.Remove(targetPiece.id);
             Destroy(targetPiece.gameObject);
 
+            // Shogun geschlagen – VICTORY EXPLOSION!
             if (targetPiece.pieceType == PieceType.Shogun)
             {
                 winner = currentPlayer;
+                int loser = currentPlayer == 1 ? 2 : 1;
                 Debug.Log($"Spieler {winner} GEWINNT! Shogun geschlagen!");
-                winAudio.Play();
+
                 DeselectPiece();
+
+                // NEU: Victory Explosion statt sofort yield break
+                yield return StartCoroutine(VictoryExplosionSequence(loser));
                 yield break;
             }
         }
@@ -778,7 +816,7 @@ public class GameManager : MonoBehaviour
 
         int nextPlayer = currentPlayer == 1 ? 2 : 1;
 
-        // ========== NEU: CHECK-WARNING HIER! ==========
+        // CHECK-WARNING
         if (IsPlayerInCheck(nextPlayer))
         {
             Debug.Log($"⚠️ CHECK! Spieler {nextPlayer} Shogun ist bedroht!");
@@ -788,7 +826,6 @@ public class GameManager : MonoBehaviour
                 UISoundManager.Instance.PlayCheckWarning();
             }
         }
-        // ===============================================
 
         // Notbremse für AI vs AI
         if (mode == GameMode.VsAI && aiVsAi && turnCount >= aiVsAiMaxTurns)
@@ -800,18 +837,26 @@ public class GameManager : MonoBehaviour
 
         int nextPlayerCount = GetPlayerPieceCount(nextPlayer);
 
+        // Army Depleted – VICTORY EXPLOSION!
         if (nextPlayerCount < 3)
         {
             winner = currentPlayer;
             Debug.Log($"Spieler {winner} GEWINNT! Armee des Gegners aufgerieben ({nextPlayerCount} Steine übrig)!");
+
+            // NEU: Victory Explosion
+            yield return StartCoroutine(VictoryExplosionSequence(nextPlayer));
             yield break;
         }
 
+        // Checkmate/Trapped – VICTORY EXPLOSION!
         if (!HasLegalMoves(nextPlayer))
         {
             bool inCheck = IsPlayerInCheck(nextPlayer);
             winner = currentPlayer;
             Debug.Log(inCheck ? $"Spieler {winner} GEWINNT! CHECKMATE!" : $"Spieler {winner} GEWINNT! Gegner ist TRAPPED!");
+
+            // NEU: Victory Explosion
+            yield return StartCoroutine(VictoryExplosionSequence(nextPlayer));
             yield break;
         }
 
@@ -824,6 +869,110 @@ public class GameManager : MonoBehaviour
             if (aiTurn) StartCoroutine(AIMakeMove());
         }
     }
+    private IEnumerator VictoryExplosionSequence(int losingPlayer)
+    {
+        Debug.Log($"🎆 VICTORY EXPLOSION! Spieler {losingPlayer} verliert!");
+
+        // Kurze dramatische Pause
+        yield return new WaitForSeconds(0.5f);
+
+        // Sammle alle Figuren des Verlierers
+        List<Piece> loserPieces = new List<Piece>();
+        Piece loserShogun = null;
+
+        foreach (Piece p in pieces.Values)
+        {
+            if (p != null && p.owner == losingPlayer)
+            {
+                if (p.pieceType == PieceType.Shogun)
+                {
+                    loserShogun = p;
+                }
+                else
+                {
+                    loserPieces.Add(p);
+                }
+            }
+        }
+
+        // 1. Normale Figuren explodieren nacheinander
+        foreach (Piece piece in loserPieces)
+        {
+            if (piece != null && piece.gameObject != null)
+            {
+                // GEÄNDERT: Nutze Inspector-Werte
+                yield return StartCoroutine(ExplodePiece(piece, normalPieceExplosionScale, false));
+                yield return new WaitForSeconds(explosionDelay); // Inspector-Wert
+            }
+        }
+
+        // 2. Shogun als Finale – EXTRA GROSS!
+        if (loserShogun != null && loserShogun.gameObject != null)
+        {
+            yield return new WaitForSeconds(shogunPauseDuration); // Inspector-Wert
+            yield return StartCoroutine(ExplodePiece(loserShogun, shogunExplosionScale, true)); // Inspector-Wert
+        }
+
+        // 3. Victory-Sound
+        yield return new WaitForSeconds(0.5f);
+        if (UISoundManager.Instance != null)
+        {
+            UISoundManager.Instance.PlayVictorySound();
+        }
+    }
+
+
+    private IEnumerator ExplodePiece(Piece piece, float maxScale, bool isShogun)
+    {
+        Vector3 originalScale = piece.transform.localScale;
+        Vector3 originalPosition = piece.transform.position;
+
+        // Dauer aus Inspector
+        float duration = isShogun ? shogunExplosionDuration : normalExplosionDuration;
+
+        // Ziel-Höhe berechnen
+        float totalFloatHeight = explosionFloatHeight;
+        if (isShogun)
+        {
+            totalFloatHeight += shogunExtraFloatHeight; // Shogun schwebt extra hoch
+        }
+
+        Vector3 targetPosition = originalPosition + new Vector3(0, totalFloatHeight, 0);
+
+        // Aufblähen UND nach oben schweben
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+
+            // Scale interpolieren
+            piece.transform.localScale = Vector3.Lerp(originalScale, originalScale * maxScale, t);
+
+            // Position interpolieren (sanfte Kurve mit Ease-Out)
+            float smoothT = 1f - Mathf.Pow(1f - t, 2f); // Ease-Out Quadratic
+            piece.transform.position = Vector3.Lerp(originalPosition, targetPosition, smoothT);
+
+            yield return null;
+        }
+
+        // Sound abspielen
+        if (UISoundManager.Instance != null)
+        {
+            if (isShogun)
+            {
+                UISoundManager.Instance.PlayBigExplosion();
+            }
+            else
+            {
+                UISoundManager.Instance.PlaySmallExplosion();
+            }
+        }
+
+        // Zerplatzen (Destroy)
+        Destroy(piece.gameObject);
+    }
+
 
 
 
@@ -1279,5 +1428,5 @@ public class GameManager : MonoBehaviour
             }
         }
     }
-
+    
 }

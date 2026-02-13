@@ -112,6 +112,34 @@ public class UISoundManager : MonoBehaviour
             musicSource.Play();
         }
     }
+    [Header("Victory Sounds")]
+    [SerializeField] private AudioClip smallExplosionClip;
+    [SerializeField] private AudioClip bigExplosionClip;
+    [SerializeField] private AudioClip victoryClip;
+
+    public void PlaySmallExplosion(float volume = 0.5f)
+    {
+        if (smallExplosionClip != null && uiAudioSource != null)
+        {
+            uiAudioSource.PlayOneShot(smallExplosionClip, volume);
+        }
+    }
+
+    public void PlayBigExplosion(float volume = 1.0f)
+    {
+        if (bigExplosionClip != null && uiAudioSource != null)
+        {
+            uiAudioSource.PlayOneShot(bigExplosionClip, volume);
+        }
+    }
+
+    public void PlayVictorySound(float volume = 0.8f)
+    {
+        if (victoryClip != null && uiAudioSource != null)
+        {
+            uiAudioSource.PlayOneShot(victoryClip, volume);
+        }
+    }
 
     [Header("Game Sounds")]
     [SerializeField] private AudioClip pieceMoveClip; 
