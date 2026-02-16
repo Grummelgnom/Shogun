@@ -48,6 +48,13 @@ public class StatsManager : MonoBehaviour
     [Tooltip("Text für die Zusammenfassung unten")]
     public TextMeshProUGUI summaryText;
 
+    [Header("Visual Effects")]
+    [Tooltip("Blur-Overlay das den Hintergrund abdunkelt und blurt")]
+    public GameObject blurOverlay;
+
+    [Tooltip("Alle Buttons die deaktiviert werden sollen (z.B. Play, Quit, etc.)")]
+    public Button[] menuButtons;
+
     [Header("Prefabs")]
     [Tooltip("Prefab für einen einzelnen Spiel-Eintrag")]
     public GameObject gameEntryPrefab;
@@ -63,11 +70,33 @@ public class StatsManager : MonoBehaviour
     /// </summary>
     public void OpenStats()
     {
+        Debug.Log("=== OpenStats() aufgerufen ===");
+
         if (statsPanel != null)
         {
             statsPanel.SetActive(true);
             RefreshStats();
+            Debug.Log("✅ Stats-Panel aktiviert");
         }
+        else
+        {
+            Debug.LogError("❌ statsPanel ist NULL!");
+        }
+
+        // Blur aktivieren
+        if (blurOverlay != null)
+        {
+            blurOverlay.SetActive(true);
+            Debug.Log("✅ BlurOverlay aktiviert");
+        }
+        else
+        {
+            Debug.LogError("❌ blurOverlay ist NULL! Bitte im Inspector zuweisen!");
+        }
+
+        // Menü-Buttons deaktivieren
+        SetMenuButtonsInteractable(false);
+        Debug.Log("✅ Buttons deaktiviert");
     }
 
     /// <summary>
@@ -75,10 +104,46 @@ public class StatsManager : MonoBehaviour
     /// </summary>
     public void CloseStats()
     {
+        Debug.Log("=== CloseStats() aufgerufen ===");
+
         if (statsPanel != null)
         {
             statsPanel.SetActive(false);
+            Debug.Log("✅ Stats-Panel deaktiviert");
         }
+
+        // Blur deaktivieren
+        if (blurOverlay != null)
+        {
+            blurOverlay.SetActive(false);
+            Debug.Log("✅ BlurOverlay deaktiviert");
+        }
+
+        // Menü-Buttons wieder aktivieren
+        SetMenuButtonsInteractable(true);
+        Debug.Log("✅ Buttons aktiviert");
+    }
+
+    /// <summary>
+    /// Aktiviert/Deaktiviert alle Menü-Buttons
+    /// </summary>
+    private void SetMenuButtonsInteractable(bool interactable)
+    {
+        if (menuButtons == null || menuButtons.Length == 0)
+        {
+            Debug.LogWarning("⚠️ Keine menuButtons zugewiesen!");
+            return;
+        }
+
+        foreach (Button btn in menuButtons)
+        {
+            if (btn != null)
+            {
+                btn.interactable = interactable;
+            }
+        }
+
+        Debug.Log($"✅ {menuButtons.Length} Buttons auf interactable={interactable} gesetzt");
     }
 
     /// <summary>
