@@ -97,4 +97,52 @@ public class GameStatsAPI : MonoBehaviour
             }
         }
     }
+    /// <summary>
+    /// Ändert die Spielernamen eines gespeicherten Spiels
+    /// </summary>
+    public void UpdatePlayerNames(int gameId, string player1Name, string player2Name, System.Action onSuccess = null)
+    {
+        StartCoroutine(PutPlayerNames(gameId, player1Name, player2Name, onSuccess));
+    }
+
+    private IEnumerator PutPlayerNames(int gameId, string player1Name, string player2Name, System.Action onSuccess)
+    {
+        // JSON manuell bauen
+        string json = "{\"id\":" + gameId;
+
+        if (!string.IsNullOrEmpty(player1Name))
+        {
+            json += ",\"player1Name\":\"" + player1Name + "\"";
+        }
+
+        if (!string.IsNullOrEmpty(player2Name))
+        {
+            json += ",\"player2Name\":\"" + player2Name + "\"";
+        }
+
+        json += "}";
+
+        Debug.Log("📝 PUT Request: " + json);
+
+        using (UnityWebRequest request = new UnityWebRequest(API_URL, "PUT"))
+        {
+            byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
+            request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+            request.downloadHandler = new DownloadHandlerBuffer();
+            request.SetRequestHeader("Content-Type", "application/json");
+
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                Debug.Log("✅ Namen aktualisiert! " + request.downloadHandler.text);
+                onSuccess?.Invoke(); // Callback ausführen (z.B. Liste aktualisieren)
+            }
+            else
+            {
+                Debug.LogError("❌ Fehler: " + request.error);
+            }
+        }
+    }
+
 }

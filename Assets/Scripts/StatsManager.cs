@@ -5,9 +5,6 @@ using TMPro;
 using System.Collections;
 using System.Collections.Generic;
 
-/// <summary>
-/// Datenstruktur für API-Antwort mit mehreren Spielen
-/// </summary>
 [System.Serializable]
 public class GamesResponse
 {
@@ -16,9 +13,6 @@ public class GamesResponse
     public List<GameStatFromDB> games;
 }
 
-/// <summary>
-/// Ein einzelnes Spiel aus der Datenbank
-/// </summary>
 [System.Serializable]
 public class GameStatFromDB
 {
@@ -31,109 +25,64 @@ public class GameStatFromDB
     public string player2_pieces_left;
     public string ai_depth;
     public string created_at;
+    public string winner_name; // NEU - nur Gewinnername
 }
 
-/// <summary>
-/// Verwaltet die Statistik-Anzeige im Hauptmenü
-/// </summary>
 public class StatsManager : MonoBehaviour
 {
     [Header("UI References")]
-    [Tooltip("Das Haupt-Stats-Panel (wird ein/ausgeblendet)")]
     public GameObject statsPanel;
-
-    [Tooltip("Der Content-Container im Scroll View")]
     public Transform scrollViewContent;
-
-    [Tooltip("Text für die Zusammenfassung unten")]
     public TextMeshProUGUI summaryText;
 
     [Header("Visual Effects")]
-    [Tooltip("Blur-Overlay das den Hintergrund abdunkelt und blurt")]
     public GameObject blurOverlay;
-
-    [Tooltip("Alle Buttons die deaktiviert werden sollen (z.B. Play, Quit, etc.)")]
     public Button[] menuButtons;
 
-    [Header("Prefabs")]
-    [Tooltip("Prefab für einen einzelnen Spiel-Eintrag")]
-    public GameObject gameEntryPrefab;
+    [Header("Edit Dialog - NUR GEWINNER")]
+    public GameObject editDialog;
+    public TMP_InputField winnerInput; // Nur 1 Input!
 
     [Header("API")]
     private const string API_URL = "http://localhost/shogun/api.php";
 
-    // Gespeicherte Daten
     private List<GameStatFromDB> loadedGames = new List<GameStatFromDB>();
+    private int currentEditingGameId = -1;
 
-    /// <summary>
-    /// Stats-Panel öffnen und Daten laden
-    /// </summary>
     public void OpenStats()
     {
-        Debug.Log("=== OpenStats() aufgerufen ===");
-
         if (statsPanel != null)
         {
             statsPanel.SetActive(true);
             RefreshStats();
-            Debug.Log("✅ Stats-Panel aktiviert");
-        }
-        else
-        {
-            Debug.LogError("❌ statsPanel ist NULL!");
         }
 
-        // Blur aktivieren
         if (blurOverlay != null)
         {
             blurOverlay.SetActive(true);
-            Debug.Log("✅ BlurOverlay aktiviert");
-        }
-        else
-        {
-            Debug.LogError("❌ blurOverlay ist NULL! Bitte im Inspector zuweisen!");
         }
 
-        // Menü-Buttons deaktivieren
         SetMenuButtonsInteractable(false);
-        Debug.Log("✅ Buttons deaktiviert");
     }
 
-    /// <summary>
-    /// Stats-Panel schließen
-    /// </summary>
     public void CloseStats()
     {
-        Debug.Log("=== CloseStats() aufgerufen ===");
-
         if (statsPanel != null)
         {
             statsPanel.SetActive(false);
-            Debug.Log("✅ Stats-Panel deaktiviert");
         }
 
-        // Blur deaktivieren
         if (blurOverlay != null)
         {
             blurOverlay.SetActive(false);
-            Debug.Log("✅ BlurOverlay deaktiviert");
         }
 
-        // Menü-Buttons wieder aktivieren
         SetMenuButtonsInteractable(true);
-        Debug.Log("✅ Buttons aktiviert");
     }
 
-    /// <summary>
-    /// Aktiviert/Deaktiviert alle Menü-Buttons
-    /// </summary>
     private void SetMenuButtonsInteractable(bool interactable)
     {
-        if (menuButtons == null || menuButtons.Length == 0)
-        {
-            Debug.LogWarning("⚠️ Keine menuButtons zugewiesen!");
-            return;
-        }
+        if (menuButtons == null || menuButtons.Length == 0) return;
 
         foreach (Button btn in menuButtons)
         {
@@ -142,21 +91,13 @@ public class StatsManager : MonoBehaviour
                 btn.interactable = interactable;
             }
         }
-
-        Debug.Log($"✅ {menuButtons.Length} Buttons auf interactable={interactable} gesetzt");
     }
 
-    /// <summary>
-    /// Statistiken neu laden (wird von Refresh-Button aufgerufen)
-    /// </summary>
     public void RefreshStats()
     {
         StartCoroutine(LoadStatsFromAPI());
     }
 
-    /// <summary>
-    /// Lädt Statistiken von der API
-    /// </summary>
     private IEnumerator LoadStatsFromAPI()
     {
         summaryText.text = "Lade Statistiken...";
@@ -167,9 +108,6 @@ public class StatsManager : MonoBehaviour
 
             if (request.result == UnityWebRequest.Result.Success)
             {
-                Debug.Log("📊 API-Antwort: " + request.downloadHandler.text);
-
-                // JSON parsen
                 GamesResponse response = JsonUtility.FromJson<GamesResponse>(request.downloadHandler.text);
 
                 if (response != null && response.success)
@@ -191,19 +129,9 @@ public class StatsManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Zeigt alle Spiele in der Scroll View an
-    /// </summary>
     private void DisplayGames()
     {
-        if (scrollViewContent == null)
-        {
-            Debug.LogError("❌ scrollViewContent ist NULL! Bitte im Inspector zuweisen!");
-            return;
-        }
-
-        Debug.Log($"✅ scrollViewContent OK: {scrollViewContent.name}");
-        Debug.Log($"📊 Anzahl Spiele: {loadedGames.Count}");
+        if (scrollViewContent == null) return;
 
         // Alte Einträge löschen
         foreach (Transform child in scrollViewContent)
@@ -217,40 +145,25 @@ public class StatsManager : MonoBehaviour
             return;
         }
 
-        // Für jedes Spiel einen Eintrag erstellen
         foreach (GameStatFromDB game in loadedGames)
         {
-            if (game == null)
-            {
-                Debug.LogWarning("⚠️ Spiel-Objekt ist NULL, überspringe...");
-                continue;
-            }
-
-            Debug.Log($"Erstelle Eintrag für Spiel ID: {game.id}");
+            if (game == null) continue;
             CreateGameEntry(game);
         }
-
-        Debug.Log("✅ Alle Einträge erstellt!");
     }
 
-    /// <summary>
-    /// Erstellt einen einzelnen Spiel-Eintrag MIT Delete-Button
-    /// </summary>
     private void CreateGameEntry(GameStatFromDB game)
     {
-        // Haupt-Container mit Hintergrund
         GameObject entry = new GameObject("GameEntry_" + game.id);
         entry.transform.SetParent(scrollViewContent, false);
 
-        // Layout
         RectTransform rt = entry.AddComponent<RectTransform>();
         rt.sizeDelta = new Vector2(720, 90);
 
-        // Hintergrund mit schöner Farbe
         Image bg = entry.AddComponent<Image>();
         bg.color = new Color(0.15f, 0.15f, 0.2f, 0.95f);
 
-        // === Text Container als Child ===
+        // === TEXT ===
         GameObject textObj = new GameObject("Text");
         textObj.transform.SetParent(entry.transform, false);
 
@@ -258,7 +171,7 @@ public class StatsManager : MonoBehaviour
         textRt.anchorMin = new Vector2(0, 0);
         textRt.anchorMax = new Vector2(1, 1);
         textRt.offsetMin = new Vector2(15, 10);
-        textRt.offsetMax = new Vector2(-60, -10); // Platz für Delete-Button rechts!
+        textRt.offsetMax = new Vector2(-110, -10);
 
         TextMeshProUGUI text = textObj.AddComponent<TextMeshProUGUI>();
         text.fontSize = 18;
@@ -266,32 +179,71 @@ public class StatsManager : MonoBehaviour
         text.color = new Color(0.95f, 0.95f, 0.95f, 1f);
         text.enableWordWrapping = true;
 
-        // === Inhalt formatieren ===
-        string winnerText = $"<color=#FFD700>Spieler {game.winner}</color>";
+        // === GEWINNER-NAME (editierbar) ===
+        string winnerName = string.IsNullOrEmpty(game.winner_name)
+            ? $"Spieler {game.winner}"
+            : game.winner_name;
+
         string modeText = GetModeDisplayName(game.game_mode);
         string dateText = FormatDate(game.created_at);
 
-        text.text = $"<size=22><b>{modeText}</b></size>\n" +
-                   $"<color=#90EE90>> {winnerText} gewonnen</color>\n" +
-                   $"<size=14><color=#CCCCCC>Züge: {game.total_moves}  |  Dauer: {game.game_duration}s  |  {dateText}</color></size>";
+        text.text = $"{modeText}\n" +
+                    $"> <color=#4CAF50>{winnerName}</color> gewonnen\n" +
+                    $"Züge: {game.total_moves} | Dauer: {game.game_duration}s | {dateText}";
 
-        // === DELETE-BUTTON hinzufügen ===
+        // === EDIT-BUTTON ===
+        GameObject editBtn = new GameObject("EditButton");
+        editBtn.transform.SetParent(entry.transform, false);
+
+        RectTransform editBtnRt = editBtn.AddComponent<RectTransform>();
+        editBtnRt.anchorMin = new Vector2(1, 0.5f);
+        editBtnRt.anchorMax = new Vector2(1, 0.5f);
+        editBtnRt.pivot = new Vector2(1, 0.5f);
+        editBtnRt.anchoredPosition = new Vector2(-60, 0);
+        editBtnRt.sizeDelta = new Vector2(40, 40);
+
+        Image editBtnImg = editBtn.AddComponent<Image>();
+        editBtnImg.color = new Color(0.2f, 0.6f, 0.8f, 0.8f);
+
+        Button editBtnComponent = editBtn.AddComponent<Button>();
+
+        GameObject editTextObj = new GameObject("Text");
+        editTextObj.transform.SetParent(editBtn.transform, false);
+
+        RectTransform editTextRt = editTextObj.AddComponent<RectTransform>();
+        editTextRt.anchorMin = Vector2.zero;
+        editTextRt.anchorMax = Vector2.one;
+        editTextRt.offsetMin = Vector2.zero;
+        editTextRt.offsetMax = Vector2.zero;
+
+        TextMeshProUGUI editBtnText = editTextObj.AddComponent<TextMeshProUGUI>();
+        editBtnText.text = "✎";
+        editBtnText.fontSize = 24;
+        editBtnText.fontStyle = FontStyles.Bold;
+        editBtnText.alignment = TextAlignmentOptions.Center;
+        editBtnText.color = Color.white;
+
+        int gameIdToEdit = int.Parse(game.id);
+        editBtnComponent.onClick.AddListener(() => {
+            OpenEditDialog(game);
+        });
+
+        // === DELETE-BUTTON ===
         GameObject deleteBtn = new GameObject("DeleteButton");
         deleteBtn.transform.SetParent(entry.transform, false);
 
         RectTransform btnRt = deleteBtn.AddComponent<RectTransform>();
-        btnRt.anchorMin = new Vector2(1, 0.5f); // Rechts, vertikal zentriert
+        btnRt.anchorMin = new Vector2(1, 0.5f);
         btnRt.anchorMax = new Vector2(1, 0.5f);
         btnRt.pivot = new Vector2(1, 0.5f);
-        btnRt.anchoredPosition = new Vector2(-10, 0); // 10px vom rechten Rand
+        btnRt.anchoredPosition = new Vector2(-10, 0);
         btnRt.sizeDelta = new Vector2(40, 40);
 
         Image btnImg = deleteBtn.AddComponent<Image>();
-        btnImg.color = new Color(0.8f, 0.2f, 0.2f, 0.8f); // Rot
+        btnImg.color = new Color(0.8f, 0.2f, 0.2f, 0.8f);
 
         Button btn = deleteBtn.AddComponent<Button>();
 
-        // Text im Button: "X"
         GameObject btnTextObj = new GameObject("Text");
         btnTextObj.transform.SetParent(deleteBtn.transform, false);
 
@@ -308,19 +260,95 @@ public class StatsManager : MonoBehaviour
         btnText.alignment = TextAlignmentOptions.Center;
         btnText.color = Color.white;
 
-        // Button-Click: Spiel löschen
         int gameIdToDelete = int.Parse(game.id);
         btn.onClick.AddListener(() => {
-            Debug.Log($"🗑️ Delete-Button geklickt für Spiel ID: {gameIdToDelete}");
             DeleteGame(gameIdToDelete);
         });
-
-        Debug.Log($"✅ Eintrag erstellt: {game.id} (mit Delete-Button)");
     }
 
     /// <summary>
-    /// Erstellt Platzhalter-Eintrag wenn keine Daten
+    /// Öffnet Edit-Dialog - NUR für Gewinner-Namen
     /// </summary>
+    private void OpenEditDialog(GameStatFromDB game)
+    {
+        if (editDialog == null)
+        {
+            Debug.LogError("❌ editDialog ist NULL!");
+            return;
+        }
+
+        currentEditingGameId = int.Parse(game.id);
+
+        // Input vorausfüllen
+        if (winnerInput != null)
+        {
+            string currentName = string.IsNullOrEmpty(game.winner_name)
+                ? $"Spieler {game.winner}"
+                : game.winner_name;
+
+            winnerInput.text = currentName;
+        }
+
+        editDialog.SetActive(true);
+        Debug.Log($"✎ Edit-Dialog geöffnet für Spiel ID: {currentEditingGameId}");
+    }
+
+    /// <summary>
+    /// Speichert den neuen Gewinner-Namen
+    /// </summary>
+    public void SaveEditedName()
+    {
+        if (currentEditingGameId == -1) return;
+
+        string newName = winnerInput != null ? winnerInput.text : "";
+
+        if (string.IsNullOrEmpty(newName))
+        {
+            Debug.LogWarning("⚠️ Name ist leer!");
+            return;
+        }
+
+        StartCoroutine(UpdateWinnerName(currentEditingGameId, newName));
+    }
+
+    private IEnumerator UpdateWinnerName(int gameId, string winnerName)
+    {
+        string json = "{\"id\":" + gameId + ",\"winnerName\":\"" + winnerName + "\"}";
+
+        Debug.Log("📝 PUT Request: " + json);
+
+        using (UnityWebRequest request = new UnityWebRequest(API_URL, "PUT"))
+        {
+            byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
+            request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+            request.downloadHandler = new DownloadHandlerBuffer();
+            request.SetRequestHeader("Content-Type", "application/json");
+
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                Debug.Log("✅ Name aktualisiert!");
+                CloseEditDialog();
+                RefreshStats();
+            }
+            else
+            {
+                Debug.LogError("❌ Fehler: " + request.error);
+            }
+        }
+    }
+
+    public void CloseEditDialog()
+    {
+        if (editDialog != null)
+        {
+            editDialog.SetActive(false);
+        }
+
+        currentEditingGameId = -1;
+    }
+
     private void CreateEmptyEntry(string message)
     {
         GameObject entry = new GameObject("EmptyEntry");
@@ -336,14 +364,11 @@ public class StatsManager : MonoBehaviour
         text.text = message;
     }
 
-    /// <summary>
-    /// Aktualisiert die Zusammenfassung unten
-    /// </summary>
     private void UpdateSummary()
     {
         if (loadedGames.Count == 0)
         {
-            summaryText.text = "<i>Noch keine Statistiken verfügbar.</i>";
+            summaryText.text = "Noch keine Statistiken verfügbar.";
             return;
         }
 
@@ -365,47 +390,29 @@ public class StatsManager : MonoBehaviour
 
         float avgMoves = totalGames > 0 ? (float)totalMoves / totalGames : 0;
 
-        // Schönere Formatierung nur mit ASCII-Zeichen
         summaryText.text =
-            $"<size=16><color=#FFD700>==============================</color></size>\n" +
-            $"<b>Gesamt:</b> {totalGames} {(totalGames == 1 ? "Spiel" : "Spiele")}  |  " +
-            $"<b>Durchschn. Züge:</b> <color=#90EE90>{avgMoves:F1}</color>\n" +
-            $"<b>Siege:</b> <color=#87CEEB>Spieler 1: {p1Wins}</color>  |  <color=#FF6B6B>Spieler 2: {p2Wins}</color>";
+            $"==============================\n" +
+            $"Gesamt: {totalGames} {(totalGames == 1 ? "Spiel" : "Spiele")} | " +
+            $"Durchschn. Züge: {avgMoves:F1}\n" +
+            $"Siege: Spieler 1: {p1Wins} | Spieler 2: {p2Wins}";
     }
 
-    /// <summary>
-    /// Löscht ein Spiel aus der Datenbank
-    /// </summary>
     public void DeleteGame(int gameId)
     {
         StartCoroutine(DeleteGameFromAPI(gameId));
     }
 
-    /// <summary>
-    /// Sendet DELETE-Request an API
-    /// </summary>
-    /// <summary>
-    /// Sendet DELETE-Request an API
-    /// </summary>
     private IEnumerator DeleteGameFromAPI(int gameId)
     {
         string deleteUrl = API_URL + "?id=" + gameId;
 
-        Debug.Log($"🗑️ Lösche Spiel ID: {gameId} - URL: {deleteUrl}");
-
         using (UnityWebRequest request = UnityWebRequest.Delete(deleteUrl))
         {
-            // DownloadHandler manuell hinzufügen (Unity Bug-Workaround)
             request.downloadHandler = new DownloadHandlerBuffer();
-
             yield return request.SendWebRequest();
 
             if (request.result == UnityWebRequest.Result.Success)
             {
-                string response = request.downloadHandler.text;
-                Debug.Log($"✅ Spiel {gameId} gelöscht! API-Antwort: {response}");
-
-                // Liste neu laden
                 RefreshStats();
             }
             else
@@ -415,10 +422,6 @@ public class StatsManager : MonoBehaviour
         }
     }
 
-
-    /// <summary>
-    /// Formatiert Spielmodus für Anzeige
-    /// </summary>
     private string GetModeDisplayName(string mode)
     {
         switch (mode)
@@ -430,12 +433,8 @@ public class StatsManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Formatiert Datum für Anzeige
-    /// </summary>
     private string FormatDate(string dateTime)
     {
-        // Format: "2026-02-16 09:30:00" -> "16.02.2026 09:30"
         if (string.IsNullOrEmpty(dateTime)) return "Unbekannt";
 
         try
@@ -452,10 +451,7 @@ public class StatsManager : MonoBehaviour
                 }
             }
         }
-        catch
-        {
-            // Falls Parsing fehlschlägt, Original zurückgeben
-        }
+        catch { }
 
         return dateTime;
     }
