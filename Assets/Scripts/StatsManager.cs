@@ -234,7 +234,7 @@ public class StatsManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Erstellt einen einzelnen Spiel-Eintrag
+    /// Erstellt einen einzelnen Spiel-Eintrag MIT Delete-Button
     /// </summary>
     private void CreateGameEntry(GameStatFromDB game)
     {
@@ -258,7 +258,7 @@ public class StatsManager : MonoBehaviour
         textRt.anchorMin = new Vector2(0, 0);
         textRt.anchorMax = new Vector2(1, 1);
         textRt.offsetMin = new Vector2(15, 10);
-        textRt.offsetMax = new Vector2(-15, -10);
+        textRt.offsetMax = new Vector2(-60, -10); // Platz für Delete-Button rechts!
 
         TextMeshProUGUI text = textObj.AddComponent<TextMeshProUGUI>();
         text.fontSize = 18;
@@ -266,7 +266,7 @@ public class StatsManager : MonoBehaviour
         text.color = new Color(0.95f, 0.95f, 0.95f, 1f);
         text.enableWordWrapping = true;
 
-        // === Inhalt formatieren (nur ASCII-Zeichen) ===
+        // === Inhalt formatieren ===
         string winnerText = $"<color=#FFD700>Spieler {game.winner}</color>";
         string modeText = GetModeDisplayName(game.game_mode);
         string dateText = FormatDate(game.created_at);
@@ -275,7 +275,47 @@ public class StatsManager : MonoBehaviour
                    $"<color=#90EE90>> {winnerText} gewonnen</color>\n" +
                    $"<size=14><color=#CCCCCC>Züge: {game.total_moves}  |  Dauer: {game.game_duration}s  |  {dateText}</color></size>";
 
-        Debug.Log($"✅ Eintrag erstellt: {game.id}");
+        // === DELETE-BUTTON hinzufügen ===
+        GameObject deleteBtn = new GameObject("DeleteButton");
+        deleteBtn.transform.SetParent(entry.transform, false);
+
+        RectTransform btnRt = deleteBtn.AddComponent<RectTransform>();
+        btnRt.anchorMin = new Vector2(1, 0.5f); // Rechts, vertikal zentriert
+        btnRt.anchorMax = new Vector2(1, 0.5f);
+        btnRt.pivot = new Vector2(1, 0.5f);
+        btnRt.anchoredPosition = new Vector2(-10, 0); // 10px vom rechten Rand
+        btnRt.sizeDelta = new Vector2(40, 40);
+
+        Image btnImg = deleteBtn.AddComponent<Image>();
+        btnImg.color = new Color(0.8f, 0.2f, 0.2f, 0.8f); // Rot
+
+        Button btn = deleteBtn.AddComponent<Button>();
+
+        // Text im Button: "X"
+        GameObject btnTextObj = new GameObject("Text");
+        btnTextObj.transform.SetParent(deleteBtn.transform, false);
+
+        RectTransform btnTextRt = btnTextObj.AddComponent<RectTransform>();
+        btnTextRt.anchorMin = Vector2.zero;
+        btnTextRt.anchorMax = Vector2.one;
+        btnTextRt.offsetMin = Vector2.zero;
+        btnTextRt.offsetMax = Vector2.zero;
+
+        TextMeshProUGUI btnText = btnTextObj.AddComponent<TextMeshProUGUI>();
+        btnText.text = "X";
+        btnText.fontSize = 24;
+        btnText.fontStyle = FontStyles.Bold;
+        btnText.alignment = TextAlignmentOptions.Center;
+        btnText.color = Color.white;
+
+        // Button-Click: Spiel löschen
+        int gameIdToDelete = int.Parse(game.id);
+        btn.onClick.AddListener(() => {
+            Debug.Log($"🗑️ Delete-Button geklickt für Spiel ID: {gameIdToDelete}");
+            DeleteGame(gameIdToDelete);
+        });
+
+        Debug.Log($"✅ Eintrag erstellt: {game.id} (mit Delete-Button)");
     }
 
     /// <summary>
@@ -332,6 +372,49 @@ public class StatsManager : MonoBehaviour
             $"<b>Durchschn. Züge:</b> <color=#90EE90>{avgMoves:F1}</color>\n" +
             $"<b>Siege:</b> <color=#87CEEB>Spieler 1: {p1Wins}</color>  |  <color=#FF6B6B>Spieler 2: {p2Wins}</color>";
     }
+
+    /// <summary>
+    /// Löscht ein Spiel aus der Datenbank
+    /// </summary>
+    public void DeleteGame(int gameId)
+    {
+        StartCoroutine(DeleteGameFromAPI(gameId));
+    }
+
+    /// <summary>
+    /// Sendet DELETE-Request an API
+    /// </summary>
+    /// <summary>
+    /// Sendet DELETE-Request an API
+    /// </summary>
+    private IEnumerator DeleteGameFromAPI(int gameId)
+    {
+        string deleteUrl = API_URL + "?id=" + gameId;
+
+        Debug.Log($"🗑️ Lösche Spiel ID: {gameId} - URL: {deleteUrl}");
+
+        using (UnityWebRequest request = UnityWebRequest.Delete(deleteUrl))
+        {
+            // DownloadHandler manuell hinzufügen (Unity Bug-Workaround)
+            request.downloadHandler = new DownloadHandlerBuffer();
+
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                string response = request.downloadHandler.text;
+                Debug.Log($"✅ Spiel {gameId} gelöscht! API-Antwort: {response}");
+
+                // Liste neu laden
+                RefreshStats();
+            }
+            else
+            {
+                Debug.LogError($"❌ Fehler beim Löschen: {request.error}");
+            }
+        }
+    }
+
 
     /// <summary>
     /// Formatiert Spielmodus für Anzeige
