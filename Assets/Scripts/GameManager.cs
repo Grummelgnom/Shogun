@@ -18,8 +18,9 @@ public enum GameMode
 
 public class GameManager : MonoBehaviour
 {
-    
-    
+    // Referenz zur Statistik-API
+    private GameStatsAPI statsAPI;
+
     [Header("Board")]
     public int rows = 8;
     public int columns = 8;
@@ -115,6 +116,13 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
+        // Statistik-API finden
+        statsAPI = FindFirstObjectByType<GameStatsAPI>();
+        if (statsAPI == null)
+        {
+            Debug.LogWarning("⚠️ GameStatsAPI nicht gefunden!");
+        }
+
         InitBoard();
         PrintBoardToConsole();
         SpawnStartPieces();
@@ -802,10 +810,14 @@ public class GameManager : MonoBehaviour
 
                 DeselectPiece();
 
+                // Statistik speichern
+                SaveGameStatistics();
+
                 // NEU: Victory Explosion statt sofort yield break
                 yield return StartCoroutine(VictoryExplosionSequence(loser));
                 yield break;
             }
+
         }
 
         int newInterpretedVal = GetInterpretedGridValue(move.to.row, move.to.column, currentPlayer);
@@ -843,10 +855,14 @@ public class GameManager : MonoBehaviour
             winner = currentPlayer;
             Debug.Log($"Spieler {winner} GEWINNT! Armee des Gegners aufgerieben ({nextPlayerCount} Steine übrig)!");
 
+            // Statistik speichern
+            SaveGameStatistics();
+
             // NEU: Victory Explosion
             yield return StartCoroutine(VictoryExplosionSequence(nextPlayer));
             yield break;
         }
+
 
         // Checkmate/Trapped – VICTORY EXPLOSION!
         if (!HasLegalMoves(nextPlayer))
@@ -855,10 +871,14 @@ public class GameManager : MonoBehaviour
             winner = currentPlayer;
             Debug.Log(inCheck ? $"Spieler {winner} GEWINNT! CHECKMATE!" : $"Spieler {winner} GEWINNT! Gegner ist TRAPPED!");
 
+            // Statistik speichern
+            SaveGameStatistics();
+
             // NEU: Victory Explosion
             yield return StartCoroutine(VictoryExplosionSequence(nextPlayer));
             yield break;
         }
+
 
         currentPlayer = nextPlayer;
 
@@ -1428,5 +1448,62 @@ public class GameManager : MonoBehaviour
             }
         }
     }
-    
+    /// <summary>
+    /// Speichert Spiel-Statistiken in der Datenbank
+    /// Wird bei beiden Siegbedingungen aufgerufen
+    /// </summary>
+    private void SaveGameStatistics()
+    {
+        if (statsAPI != null)
+        {
+            GameStat stat = new GameStat
+            {
+                gameMode = GetGameModeName(),
+                winner = winner,
+                totalMoves = turnCount,
+                gameDuration = (int)Time.timeSinceLevelLoad,
+                player1PiecesLeft = GetPlayerPieceCount(1),
+                player2PiecesLeft = GetPlayerPieceCount(2),
+                aiDepth = GetCurrentAIDepth()
+            };
+
+            statsAPI.SaveGameStats(stat);
+        }
+        else
+        {
+            Debug.LogWarning("⚠️ GameStatsAPI nicht gefunden - Statistik nicht gespeichert!");
+        }
+    }
+    // ========== STATISTIK HELPER METHODEN ==========
+
+    /// <summary>
+    /// Gibt den aktuellen Spielmodus als String zurück
+    /// </summary>
+    private string GetGameModeName()
+    {
+        if (mode == GameMode.TwoPlayer)
+        {
+            return aiVsAi ? "AIvAI" : "PvP";
+        }
+        else if (mode == GameMode.VsAI)
+        {
+            return aiVsAi ? "AIvAI" : "PvAI";
+        }
+        return "Unknown";
+    }
+
+    /// <summary>
+    /// Gibt aktuelle KI-Tiefe zurück (0 wenn kein AI)
+    /// </summary>
+    private int GetCurrentAIDepth()
+    {
+        // Wenn VsAI oder AIvAI aktiv ist
+        if (mode == GameMode.VsAI || aiVsAi)
+        {
+            return aiDepth; // Deine Variable für KI-Schwierigkeit
+        }
+        return 0; // Kein AI = 0
+    }
 }
+
+
