@@ -550,6 +550,7 @@ GameObject:
   - component: {fileID: 217184120}
   - component: {fileID: 217184119}
   - component: {fileID: 217184122}
+  - component: {fileID: 217184123}
   m_Layer: 5
   m_Name: Quit Button
   m_TagString: Untagged
@@ -572,11 +573,11 @@ RectTransform:
   - {fileID: 35114326}
   m_Father: {fileID: 359848887}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 160, y: 30}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: 0, y: 170}
+  m_SizeDelta: {x: 320, y: 60}
+  m_Pivot: {x: 0.5, y: 0}
 --- !u!114 &217184119
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -653,8 +654,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 21300000, guid: e4b81b4a2c5a946469e29610eda0e278, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -683,6 +684,36 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7877342e0039b4149960fa8ca03ad9ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &217184123
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 217184117}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6f5d28fe452c004e9572c7abc5807f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hoverScale: 1.05
+  pressScale: 0.95
+  duration: 1
+  scaleEase: 27
+  enableRotation: 1
+  hoverRotation: {x: 180, y: 0, z: 5}
+  pressRotation: {x: 0, y: 0, z: 0}
+  enableColor: 1
+  hoverColor: {r: 0.9622642, g: 0.013616921, b: 0.013616921, a: 1}
+  pressColor: {r: 0.06474723, g: 0.188112, b: 0.9150943, a: 1}
+  enableBobble: 1
+  bobbleAmount: 5
+  bobbleAxis: 4
+  playSound: 1
+  hoverSound: {fileID: 0}
+  clickSound: {fileID: 0}
+  waitForComplete: 1
+  resetOnExit: 1
 --- !u!1 &240582282
 GameObject:
   m_ObjectHideFlags: 0
@@ -740,7 +771,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: AI vs AI
+  m_text: Computer versus Computer
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -832,6 +863,7 @@ GameObject:
   - component: {fileID: 286110246}
   - component: {fileID: 286110245}
   - component: {fileID: 286110248}
+  - component: {fileID: 286110249}
   m_Layer: 5
   m_Name: Vs AI Button
   m_TagString: Untagged
@@ -854,11 +886,11 @@ RectTransform:
   - {fileID: 1790470005}
   m_Father: {fileID: 359848887}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -627, y: 0}
-  m_SizeDelta: {x: 160, y: 30}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0.5, y: 1}
+  m_AnchorMax: {x: 0.5, y: 1}
+  m_AnchoredPosition: {x: 0, y: -504}
+  m_SizeDelta: {x: 320, y: 60}
+  m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &286110245
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -935,8 +967,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 21300000, guid: 14da36e4e5906a64596481e6fd2a07d8, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -965,6 +997,36 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7877342e0039b4149960fa8ca03ad9ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &286110249
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 286110243}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6f5d28fe452c004e9572c7abc5807f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hoverScale: 1.05
+  pressScale: 0.95
+  duration: 1
+  scaleEase: 27
+  enableRotation: 1
+  hoverRotation: {x: 180, y: 0, z: 5}
+  pressRotation: {x: 0, y: 0, z: 0}
+  enableColor: 1
+  hoverColor: {r: 0.9622642, g: 0.013616921, b: 0.013616921, a: 1}
+  pressColor: {r: 0.06474723, g: 0.188112, b: 0.9150943, a: 1}
+  enableBobble: 1
+  bobbleAmount: 5
+  bobbleAxis: 4
+  playSound: 1
+  hoverSound: {fileID: 0}
+  clickSound: {fileID: 0}
+  waitForComplete: 1
+  resetOnExit: 1
 --- !u!1 &294666414
 GameObject:
   m_ObjectHideFlags: 0
@@ -1425,6 +1487,7 @@ GameObject:
   - component: {fileID: 420873771}
   - component: {fileID: 420873770}
   - component: {fileID: 420873773}
+  - component: {fileID: 420873774}
   m_Layer: 5
   m_Name: AI (Player 1) Depth
   m_TagString: Untagged
@@ -1451,7 +1514,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -309, y: -38}
+  m_AnchoredPosition: {x: 0, y: 107}
   m_SizeDelta: {x: 160, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &420873770
@@ -1571,6 +1634,36 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7877342e0039b4149960fa8ca03ad9ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &420873774
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 420873768}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6f5d28fe452c004e9572c7abc5807f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hoverScale: 1.05
+  pressScale: 0.95
+  duration: 0.2
+  scaleEase: 27
+  enableRotation: 1
+  hoverRotation: {x: 0, y: 0, z: 360}
+  pressRotation: {x: 0, y: 0, z: 0}
+  enableColor: 1
+  hoverColor: {r: 1, g: 1, b: 1, a: 1}
+  pressColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  enableBobble: 1
+  bobbleAmount: 5
+  bobbleAxis: 4
+  playSound: 1
+  hoverSound: {fileID: 0}
+  clickSound: {fileID: 0}
+  waitForComplete: 1
+  resetOnExit: 1
 --- !u!1 &448226275
 GameObject:
   m_ObjectHideFlags: 0
@@ -1584,6 +1677,7 @@ GameObject:
   - component: {fileID: 448226278}
   - component: {fileID: 448226277}
   - component: {fileID: 448226280}
+  - component: {fileID: 448226281}
   m_Layer: 5
   m_Name: AI vs AI Button
   m_TagString: Untagged
@@ -1608,8 +1702,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -309, y: 0}
-  m_SizeDelta: {x: 160, y: 30}
+  m_AnchoredPosition: {x: 0, y: 161}
+  m_SizeDelta: {x: 320, y: 60}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &448226277
 MonoBehaviour:
@@ -1687,8 +1781,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 21300000, guid: 4500c5a40f1af704698fcd76da12bd58, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -1717,6 +1811,36 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7877342e0039b4149960fa8ca03ad9ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &448226281
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 448226275}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6f5d28fe452c004e9572c7abc5807f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hoverScale: 1.05
+  pressScale: 0.95
+  duration: 1
+  scaleEase: 27
+  enableRotation: 1
+  hoverRotation: {x: 180, y: 0, z: 5}
+  pressRotation: {x: 0, y: 0, z: 0}
+  enableColor: 1
+  hoverColor: {r: 0.9622642, g: 0.013616921, b: 0.013616921, a: 1}
+  pressColor: {r: 0.06474723, g: 0.188112, b: 0.9150943, a: 1}
+  enableBobble: 1
+  bobbleAmount: 5
+  bobbleAxis: 4
+  playSound: 1
+  hoverSound: {fileID: 0}
+  clickSound: {fileID: 0}
+  waitForComplete: 1
+  resetOnExit: 1
 --- !u!1 &464603920
 GameObject:
   m_ObjectHideFlags: 0
@@ -3947,6 +4071,7 @@ GameObject:
   - component: {fileID: 1370839447}
   - component: {fileID: 1370839446}
   - component: {fileID: 1370839449}
+  - component: {fileID: 1370839450}
   m_Layer: 5
   m_Name: 2 Player Button
   m_TagString: Untagged
@@ -3971,8 +4096,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 472, y: 0}
-  m_SizeDelta: {x: 160, y: 30}
+  m_AnchoredPosition: {x: 0, y: 279}
+  m_SizeDelta: {x: 320, y: 60}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1370839446
 MonoBehaviour:
@@ -4050,8 +4175,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 21300000, guid: 2b3a756ca9ec5b04f930738e1ec1bdc5, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -4080,6 +4205,36 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7877342e0039b4149960fa8ca03ad9ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1370839450
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1370839444}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6f5d28fe452c004e9572c7abc5807f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hoverScale: 1.05
+  pressScale: 0.95
+  duration: 1
+  scaleEase: 27
+  enableRotation: 1
+  hoverRotation: {x: 180, y: 0, z: 5}
+  pressRotation: {x: 0, y: 0, z: 0}
+  enableColor: 1
+  hoverColor: {r: 0.9622642, g: 0.013616921, b: 0.013616921, a: 1}
+  pressColor: {r: 0.06474723, g: 0.188112, b: 0.9150943, a: 1}
+  enableBobble: 1
+  bobbleAmount: 5
+  bobbleAxis: 4
+  playSound: 1
+  hoverSound: {fileID: 0}
+  clickSound: {fileID: 0}
+  waitForComplete: 1
+  resetOnExit: 1
 --- !u!1 &1436726510
 GameObject:
   m_ObjectHideFlags: 0
@@ -4704,8 +4859,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 204, y: 92}
-  m_SizeDelta: {x: 160, y: 30}
+  m_AnchoredPosition: {x: 0, y: -265}
+  m_SizeDelta: {x: 320, y: 60}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1553744411
 MonoBehaviour:
@@ -4813,6 +4968,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6f5d28fe452c004e9572c7abc5807f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  hoverScale: 1.05
+  pressScale: 0.95
+  duration: 1
+  scaleEase: 27
+  enableRotation: 1
+  hoverRotation: {x: 180, y: 0, z: 5}
+  pressRotation: {x: 0, y: 0, z: 0}
+  enableColor: 1
+  hoverColor: {r: 0.9622642, g: 0.013616921, b: 0.013616921, a: 1}
+  pressColor: {r: 0.06474723, g: 0.188112, b: 0.9150943, a: 1}
+  enableBobble: 1
+  bobbleAmount: 5
+  bobbleAxis: 4
+  playSound: 1
+  hoverSound: {fileID: 0}
+  clickSound: {fileID: 0}
+  waitForComplete: 1
+  resetOnExit: 1
 --- !u!1 &1573003488
 GameObject:
   m_ObjectHideFlags: 0
@@ -5032,7 +5205,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Vs AI
+  m_text: 'Player versus Computer
 
 '
   m_isRightToLeft: 0
@@ -5381,7 +5554,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '2 Player
+  m_text: 'Player versus Player
 
 '
   m_isRightToLeft: 0
