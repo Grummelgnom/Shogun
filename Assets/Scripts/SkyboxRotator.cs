@@ -1,15 +1,34 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class SkyboxRotator : MonoBehaviour
 {
     [Header("Rotation")]
-    public float rotationSpeed = 0.1f;  // Sanft: 0.05-0.5
-    public bool rotateY = true;          // Y-Achse (Standard)
+    public float rotationSpeed = 0.1f;
+    public bool rotateY = true;
     public bool autoStart = true;
 
     Material skyMat;
 
-    void Start()
+    void OnEnable()
+    {
+        // Material bei jedem OnEnable neu holen (auch nach Szenenwechsel)
+        FetchSkyboxMaterial();
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // Nach jedem Szenenwechsel Referenz erneuern
+        FetchSkyboxMaterial();
+    }
+
+    void FetchSkyboxMaterial()
     {
         skyMat = RenderSettings.skybox;
         if (skyMat == null)
@@ -25,7 +44,6 @@ public class SkyboxRotator : MonoBehaviour
         }
     }
 
-    // Manuell stoppen/starten (z.B. per Button)
     public void StartRotation() { autoStart = true; }
     public void StopRotation() { autoStart = false; }
 }
