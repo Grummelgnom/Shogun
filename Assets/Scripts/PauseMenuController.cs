@@ -6,10 +6,14 @@ public class PauseMenuController : MonoBehaviour
 {
     [SerializeField] private GameObject pausePanel;
     [SerializeField] private string mainMenuSceneName = "MainMenu";
-    [SerializeField] private string mainSceneName = "MainScene";
+    [SerializeField] private string mainSceneName = "Game";
 
     [Header("UI References")]
     [SerializeField] private GameUIController gameUIController;
+
+    [Header("Skybox")]
+    [Tooltip("Das Skybox-Material des MainMenus hier zuweisen!")]
+    [SerializeField] private Material mainMenuSkybox;
 
     private bool isPaused = false;
 
@@ -59,19 +63,18 @@ public class PauseMenuController : MonoBehaviour
 
     public void BackToMenu()
     {
+        // Skybox VOR dem Szenenwechsel auf MainMenu-Material setzen
+        if (mainMenuSkybox != null)
+            RenderSettings.skybox = mainMenuSkybox;
+
         CleanupBeforeLoad();
         SceneManager.LoadScene(mainMenuSceneName);
     }
 
-    /// <summary>
-    /// Vor jedem Szenenwechsel: timeScale zurücksetzen und DOTween sauber beenden.
-    /// Ohne das frieren DOTween-Animationen in der Zielszene ein, weil
-    /// timeScale noch 0 war als die neuen Tweens gestartet wurden.
-    /// </summary>
     private void CleanupBeforeLoad()
     {
         Time.timeScale = 1f;
-        DOTween.KillAll();       // Alle laufenden Tweens sauber beenden
-        DOTween.ClearCachedTweens(); // Tween-Pool leeren für sauberen Start
+        DOTween.KillAll();
+        DOTween.ClearCachedTweens();
     }
 }

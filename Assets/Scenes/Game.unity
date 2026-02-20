@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 2100000, guid: 5d133deeaa66ed445853e946ff25e073, type: 2}
+  m_SkyboxMaterial: {fileID: 0}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -204,8 +204,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 742260662}
-        m_TargetAssemblyTypeName: GameUIController, Assembly-CSharp
+      - m_Target: {fileID: 1960531380}
+        m_TargetAssemblyTypeName: PauseMenuController, Assembly-CSharp
         m_MethodName: BackToMenu
         m_Mode: 1
         m_Arguments:
@@ -294,8 +294,6 @@ MonoBehaviour:
   playSound: 1
   hoverSound: {fileID: 0}
   clickSound: {fileID: 0}
-  waitForComplete: 1
-  resetOnExit: 1
 --- !u!1 &22226851
 GameObject:
   m_ObjectHideFlags: 0
@@ -1182,8 +1180,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rotationSpeed: 0.1
-  rotateY: 1
-  autoStart: 1
+  skyboxMaterial: {fileID: 2100000, guid: 5d133deeaa66ed445853e946ff25e073, type: 2}
 --- !u!4 &182262876
 Transform:
   m_ObjectHideFlags: 0
@@ -2582,8 +2579,6 @@ MonoBehaviour:
   playSound: 1
   hoverSound: {fileID: 0}
   clickSound: {fileID: 0}
-  waitForComplete: 1
-  resetOnExit: 1
 --- !u!1 &691813288
 GameObject:
   m_ObjectHideFlags: 0
@@ -4483,8 +4478,6 @@ MonoBehaviour:
   playSound: 1
   hoverSound: {fileID: 0}
   clickSound: {fileID: 0}
-  waitForComplete: 1
-  resetOnExit: 1
 --- !u!1001 &1377839727
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4852,8 +4845,6 @@ MonoBehaviour:
   playSound: 1
   hoverSound: {fileID: 0}
   clickSound: {fileID: 0}
-  waitForComplete: 1
-  resetOnExit: 1
 --- !u!1 &1501596351
 GameObject:
   m_ObjectHideFlags: 0
@@ -6385,6 +6376,7 @@ MonoBehaviour:
   mainMenuSceneName: MainMenu
   mainSceneName: Game
   gameUIController: {fileID: 742260662}
+  mainMenuSkybox: {fileID: 2100000, guid: 3e5399bd195de7649b874f58c1b9f8a3, type: 2}
 --- !u!4 &1960531381
 Transform:
   m_ObjectHideFlags: 0

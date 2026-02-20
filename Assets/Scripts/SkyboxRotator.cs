@@ -1,49 +1,39 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class SkyboxRotator : MonoBehaviour
 {
-    [Header("Rotation")]
-    public float rotationSpeed = 0.1f;
-    public bool rotateY = true;
-    public bool autoStart = true;
+    public float rotationSpeed = 1f;
 
-    Material skyMat;
+    [Tooltip("Das Skybox-Material dieser Szene zuweisen!")]
+    public Material skyboxMaterial;
 
-    void OnEnable()
+    private float rotation = 0f;
+
+    IEnumerator Start()
     {
-        // Material bei jedem OnEnable neu holen (auch nach Szenenwechsel)
-        FetchSkyboxMaterial();
-        SceneManager.sceneLoaded += OnSceneLoaded;
-    }
+        // Warten bis Unity fertig geladen hat
+        yield return new WaitForEndOfFrame();
+        yield return new WaitForEndOfFrame();
 
-    void OnDisable()
-    {
-        SceneManager.sceneLoaded -= OnSceneLoaded;
-    }
+        if (skyboxMaterial == null)
+        {
+            Debug.LogError("[SkyboxRotator] Kein Material zugewiesen!");
+            yield break;
+        }
 
-    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-    {
-        // Nach jedem Szenenwechsel Referenz erneuern
-        FetchSkyboxMaterial();
-    }
-
-    void FetchSkyboxMaterial()
-    {
-        skyMat = RenderSettings.skybox;
-        if (skyMat == null)
-            Debug.LogError("Kein Skybox Material! Lighting > Environment zuweisen.");
+        RenderSettings.skybox = skyboxMaterial;
+        rotation = 0f;
+        Debug.Log($"[SkyboxRotator] Gestartet: {skyboxMaterial.name}");
     }
 
     void Update()
     {
-        if (skyMat && autoStart)
-        {
-            float rot = Time.time * rotationSpeed;
-            skyMat.SetFloat("_Rotation", rot);
-        }
-    }
+        if (skyboxMaterial == null) return;
+        if (RenderSettings.skybox != skyboxMaterial)
+            RenderSettings.skybox = skyboxMaterial;
 
-    public void StartRotation() { autoStart = true; }
-    public void StopRotation() { autoStart = false; }
+        rotation = (rotation + rotationSpeed * Time.deltaTime) % 360f;
+        skyboxMaterial.SetFloat("_Rotation", rotation);
+    }
 }
