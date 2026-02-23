@@ -6,6 +6,10 @@ using System.Collections;
 
 public class FancyButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler
 {
+    [Header("Click Zoom")]
+    public float clickZoomScale = 3f;        // Wie groß der Button wird
+    public float clickZoomDuration = 0.4f;   // Wie lange die Animation dauert
+
     [Header("Scale Animation")]
     public float hoverScale = 1.05f;
     public float pressScale = 0.95f;
@@ -128,6 +132,30 @@ public class FancyButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (playSound && clickSound != null && audioSource)
             audioSource.PlayOneShot(clickSound);
     }
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        StopAllLocalCoroutines();
+        currentCoroutine = StartCoroutine(ZoomAndExecute(eventData));
+    }
+
+    IEnumerator ZoomAndExecute(PointerEventData eventData)
+    {
+        // Sound sofort
+        if (playSound && clickSound != null && audioSource)
+            audioSource.PlayOneShot(clickSound);
+
+        // Zoom-Animation läuft vollständig durch
+        yield return transform
+            .DOScale(clickZoomScale, clickZoomDuration)
+            .SetEase(Ease.InBack)
+            .SetUpdate(true)
+            .WaitForCompletion();
+
+        // Erst danach Funktionalität ausführen
+        ExecuteEvents.Execute(gameObject, eventData, ExecuteEvents.submitHandler);
+    }
+
 
     public void OnPointerUp(PointerEventData eventData) { }
 

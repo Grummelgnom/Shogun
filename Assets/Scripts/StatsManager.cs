@@ -25,7 +25,7 @@ public class GameStatFromDB
     public string player2_pieces_left;
     public string ai_depth;
     public string created_at;
-    public string winner_name; // NEU - nur Gewinnername
+    public string winner_name;
 }
 
 public class StatsManager : MonoBehaviour
@@ -39,9 +39,9 @@ public class StatsManager : MonoBehaviour
     public GameObject blurOverlay;
     public Button[] menuButtons;
 
-    [Header("Edit Dialog - NUR GEWINNER")]
+    [Header("Edit Dialog")]
     public GameObject editDialog;
-    public TMP_InputField winnerInput; // Nur 1 Input!
+    public TMP_InputField winnerInput;
 
     [Header("API")]
     private const string API_URL = "http://localhost/shogun/api.php";
@@ -100,7 +100,7 @@ public class StatsManager : MonoBehaviour
 
     private IEnumerator LoadStatsFromAPI()
     {
-        summaryText.text = "Lade Statistiken...";
+        summaryText.text = "Loading statistics...";
 
         using (UnityWebRequest request = UnityWebRequest.Get(API_URL))
         {
@@ -118,13 +118,13 @@ public class StatsManager : MonoBehaviour
                 }
                 else
                 {
-                    summaryText.text = "Fehler beim Laden der Daten.";
+                    summaryText.text = "Error loading data.";
                 }
             }
             else
             {
-                Debug.LogError("❌ API-Fehler: " + request.error);
-                summaryText.text = "Verbindung zur Datenbank fehlgeschlagen.\n" + request.error;
+                Debug.LogError("❌ API error: " + request.error);
+                summaryText.text = "Connection to database failed.\n" + request.error;
             }
         }
     }
@@ -133,7 +133,6 @@ public class StatsManager : MonoBehaviour
     {
         if (scrollViewContent == null) return;
 
-        // Alte Einträge löschen
         foreach (Transform child in scrollViewContent)
         {
             Destroy(child.gameObject);
@@ -141,7 +140,7 @@ public class StatsManager : MonoBehaviour
 
         if (loadedGames.Count == 0)
         {
-            CreateEmptyEntry("Noch keine Spiele gespielt.");
+            CreateEmptyEntry("No games played yet.");
             return;
         }
 
@@ -179,19 +178,19 @@ public class StatsManager : MonoBehaviour
         text.color = new Color(0.95f, 0.95f, 0.95f, 1f);
         text.enableWordWrapping = true;
 
-        // === GEWINNER-NAME (editierbar) ===
+        // === WINNER NAME (editable) ===
         string winnerName = string.IsNullOrEmpty(game.winner_name)
-            ? $"Spieler {game.winner}"
+            ? $"Player {game.winner}"
             : game.winner_name;
 
         string modeText = GetModeDisplayName(game.game_mode);
         string dateText = FormatDate(game.created_at);
 
         text.text = $"{modeText}\n" +
-                    $"> <color=#4CAF50>{winnerName}</color> gewonnen\n" +
-                    $"Züge: {game.total_moves} | Dauer: {game.game_duration}s | {dateText}";
+                    $"> <color=#4CAF50>{winnerName}</color> won\n" +
+                    $"Moves: {game.total_moves} | Duration: {game.game_duration}s | {dateText}";
 
-        // === EDIT-BUTTON ===
+        // === EDIT BUTTON ===
         GameObject editBtn = new GameObject("EditButton");
         editBtn.transform.SetParent(entry.transform, false);
 
@@ -228,7 +227,7 @@ public class StatsManager : MonoBehaviour
             OpenEditDialog(game);
         });
 
-        // === DELETE-BUTTON ===
+        // === DELETE BUTTON ===
         GameObject deleteBtn = new GameObject("DeleteButton");
         deleteBtn.transform.SetParent(entry.transform, false);
 
@@ -267,34 +266,33 @@ public class StatsManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Öffnet Edit-Dialog - NUR für Gewinner-Namen
+    /// Opens Edit Dialog - for winner name only
     /// </summary>
     private void OpenEditDialog(GameStatFromDB game)
     {
         if (editDialog == null)
         {
-            Debug.LogError("❌ editDialog ist NULL!");
+            Debug.LogError("❌ editDialog is NULL!");
             return;
         }
 
         currentEditingGameId = int.Parse(game.id);
 
-        // Input vorausfüllen
         if (winnerInput != null)
         {
             string currentName = string.IsNullOrEmpty(game.winner_name)
-                ? $"Spieler {game.winner}"
+                ? $"Player {game.winner}"
                 : game.winner_name;
 
             winnerInput.text = currentName;
         }
 
         editDialog.SetActive(true);
-        Debug.Log($"✎ Edit-Dialog geöffnet für Spiel ID: {currentEditingGameId}");
+        Debug.Log($"✎ Edit dialog opened for game ID: {currentEditingGameId}");
     }
 
     /// <summary>
-    /// Speichert den neuen Gewinner-Namen
+    /// Saves the new winner name
     /// </summary>
     public void SaveEditedName()
     {
@@ -304,7 +302,7 @@ public class StatsManager : MonoBehaviour
 
         if (string.IsNullOrEmpty(newName))
         {
-            Debug.LogWarning("⚠️ Name ist leer!");
+            Debug.LogWarning("⚠️ Name is empty!");
             return;
         }
 
@@ -328,13 +326,13 @@ public class StatsManager : MonoBehaviour
 
             if (request.result == UnityWebRequest.Result.Success)
             {
-                Debug.Log("✅ Name aktualisiert!");
+                Debug.Log("✅ Name updated!");
                 CloseEditDialog();
                 RefreshStats();
             }
             else
             {
-                Debug.LogError("❌ Fehler: " + request.error);
+                Debug.LogError("❌ Error: " + request.error);
             }
         }
     }
@@ -368,7 +366,7 @@ public class StatsManager : MonoBehaviour
     {
         if (loadedGames.Count == 0)
         {
-            summaryText.text = "Noch keine Statistiken verfügbar.";
+            summaryText.text = "No statistics available yet.";
             return;
         }
 
@@ -392,9 +390,9 @@ public class StatsManager : MonoBehaviour
 
         summaryText.text =
             $"==============================\n" +
-            $"Gesamt: {totalGames} {(totalGames == 1 ? "Spiel" : "Spiele")} | " +
-            $"Durchschn. Züge: {avgMoves:F1}\n" +
-            $"Siege: Spieler 1: {p1Wins} | Spieler 2: {p2Wins}";
+            $"Total: {totalGames} {(totalGames == 1 ? "Game" : "Games")} | " +
+            $"Avg. Moves: {avgMoves:F1}\n" +
+            $"Wins: Player 1: {p1Wins} | Player 2: {p2Wins}";
     }
 
     public void DeleteGame(int gameId)
@@ -417,7 +415,7 @@ public class StatsManager : MonoBehaviour
             }
             else
             {
-                Debug.LogError($"❌ Fehler beim Löschen: {request.error}");
+                Debug.LogError($"❌ Error deleting game: {request.error}");
             }
         }
     }
@@ -426,8 +424,8 @@ public class StatsManager : MonoBehaviour
     {
         switch (mode)
         {
-            case "PvP": return "Spieler vs Spieler";
-            case "PvAI": return "Spieler vs Computer";
+            case "PvP": return "Player vs Player";
+            case "PvAI": return "Player vs Computer";
             case "AIvAI": return "Computer vs Computer";
             default: return mode;
         }
@@ -435,7 +433,7 @@ public class StatsManager : MonoBehaviour
 
     private string FormatDate(string dateTime)
     {
-        if (string.IsNullOrEmpty(dateTime)) return "Unbekannt";
+        if (string.IsNullOrEmpty(dateTime)) return "Unknown";
 
         try
         {

@@ -5,7 +5,7 @@ using TMPro;
 public class GameUIController : MonoBehaviour
 {
     [SerializeField] private GameManager gameManager;
-    [SerializeField] private AudioSource applausAudio;  // NEU: Drag GameManager's Applaus-Source rein
+    [SerializeField] private AudioSource applausAudio;
     [SerializeField] private GameObject gameOverPanel;
     [SerializeField] private TMP_Text resultText;
 
@@ -13,7 +13,8 @@ public class GameUIController : MonoBehaviour
     [SerializeField] private string mainSceneName = "MainScene";
 
     [Header("Game UI Elements")]
-    [SerializeField] private GameObject hintButton; // NEU: Hint Button Referenz
+    [SerializeField] private GameObject hintButton;
+    [SerializeField] private GameObject pauseButton; // NEU: Pause Button Referenz
 
     private bool shown = false;
 
@@ -23,6 +24,9 @@ public class GameUIController : MonoBehaviour
 
         // Hint Button zu Spielbeginn einblenden
         SetHintButtonVisible(true);
+
+        // Pause Button zu Spielbeginn einblenden
+        SetPauseButtonVisible(true);
     }
 
     void Update()
@@ -35,10 +39,10 @@ public class GameUIController : MonoBehaviour
             shown = true;
             if (gameOverPanel != null) gameOverPanel.SetActive(true);
             if (resultText != null) resultText.text = $"Spieler {winner} gewinnt!";
-            
-            // NEU: Applaus bei PvAI-Sieg (Player=1)
+
+            // Applaus bei PvAI-Sieg (Player=1)
             if (winner == 1 && gameManager.mode == GameMode.VsAI)
-            {  // Passe GameMode an dein Enum an
+            {
                 if (applausAudio != null)
                 {
                     applausAudio.Play();
@@ -46,10 +50,11 @@ public class GameUIController : MonoBehaviour
                 }
             }
 
+            // Buttons beim GameOver ausblenden
             SetHintButtonVisible(false);
+            SetPauseButtonVisible(false);
         }
     }
-
 
     /// <summary>
     /// Steuert die Sichtbarkeit des Hint Buttons
@@ -58,18 +63,24 @@ public class GameUIController : MonoBehaviour
     {
         if (hintButton != null)
             hintButton.SetActive(visible);
-        
+    }
+
+    /// <summary>
+    /// Steuert die Sichtbarkeit des Pause Buttons
+    /// </summary>
+    public void SetPauseButtonVisible(bool visible)
+    {
+        if (pauseButton != null)
+            pauseButton.SetActive(visible);
     }
 
     public void Restart()
     {
         SceneManager.LoadScene(mainSceneName);
-        
     }
 
     public void BackToMenu()
     {
         SceneManager.LoadScene(mainMenuSceneName);
-        
     }
 }

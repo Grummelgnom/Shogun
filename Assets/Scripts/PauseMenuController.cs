@@ -11,6 +11,9 @@ public class PauseMenuController : MonoBehaviour
     [Header("UI References")]
     [SerializeField] private GameUIController gameUIController;
 
+    [Header("Visual Effects")]
+    [SerializeField] private GameObject blurOverlay;
+
     [Header("Skybox")]
     [Tooltip("Das Skybox-Material des MainMenus hier zuweisen!")]
     [SerializeField] private Material mainMenuSkybox;
@@ -20,6 +23,7 @@ public class PauseMenuController : MonoBehaviour
     void Start()
     {
         if (pausePanel != null) pausePanel.SetActive(false);
+        if (blurOverlay != null) blurOverlay.SetActive(false);
         Time.timeScale = 1f;
 
         if (gameUIController == null)
@@ -39,20 +43,28 @@ public class PauseMenuController : MonoBehaviour
     {
         isPaused = true;
         if (pausePanel != null) pausePanel.SetActive(true);
+        if (blurOverlay != null) blurOverlay.SetActive(true);
         Time.timeScale = 0f;
 
         if (gameUIController != null)
+        {
             gameUIController.SetHintButtonVisible(false);
+            gameUIController.SetPauseButtonVisible(false);
+        }
     }
 
     public void Resume()
     {
         isPaused = false;
         if (pausePanel != null) pausePanel.SetActive(false);
+        if (blurOverlay != null) blurOverlay.SetActive(false);
         Time.timeScale = 1f;
 
         if (gameUIController != null)
+        {
             gameUIController.SetHintButtonVisible(true);
+            gameUIController.SetPauseButtonVisible(true);
+        }
     }
 
     public void Restart()

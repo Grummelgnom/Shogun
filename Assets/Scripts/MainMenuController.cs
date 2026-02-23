@@ -1,9 +1,8 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 using TMPro;
-using static GameManager;
 
 public class MainMenuController : MonoBehaviour
 {
@@ -11,9 +10,11 @@ public class MainMenuController : MonoBehaviour
     [SerializeField] private TMP_Dropdown strengthDropdown;
     [SerializeField] private TMP_Dropdown tempoDropdown;
 
-
     [Header("Scene Names")]
     public string mainSceneName = "Game";
+
+    [Header("Scene Load Delay")]
+    public float sceneLoadDelay = 0.6f; // Etwas länger als clickZoomDuration im FancyButton
 
     private void Start()
     {
@@ -32,10 +33,9 @@ public class MainMenuController : MonoBehaviour
         if (dd == null) return;
 
         dd.ClearOptions();
-        dd.AddOptions(new List<string> { "EASY", "MEDIUM", "HARD" }); // Beispiel
+        dd.AddOptions(new List<string> { "Easy", "Medium", "Hard" });
         dd.onValueChanged.AddListener(_ => ApplyDropdownsToSettings());
     }
-
 
     private void ApplyDropdownsToSettings()
     {
@@ -53,7 +53,7 @@ public class MainMenuController : MonoBehaviour
         ApplyDropdownsToSettings();
         GameSettings.SelectedMode = GameMode.TwoPlayer;
         GameSettings.AIVsAI = false;
-        SceneManager.LoadScene(mainSceneName);
+        StartCoroutine(LoadWithDelay(mainSceneName));
     }
 
     public void PlayVsAI()
@@ -61,24 +61,29 @@ public class MainMenuController : MonoBehaviour
         ApplyDropdownsToSettings();
         GameSettings.SelectedMode = GameMode.VsAI;
         GameSettings.AIVsAI = false;
-        SceneManager.LoadScene(mainSceneName);
+        StartCoroutine(LoadWithDelay(mainSceneName));
     }
 
     public void PlayAIVsAI()
     {
         ApplyDropdownsToSettings();
-        GameSettings.SelectedMode = GameMode.VsAI; // Option A: reuse VsAI
+        GameSettings.SelectedMode = GameMode.VsAI;
         GameSettings.AIVsAI = true;
-        SceneManager.LoadScene(mainSceneName);
+        StartCoroutine(LoadWithDelay(mainSceneName));
     }
+
     public void QuitGame()
     {
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #else
-    Application.Quit();
+        Application.Quit();
 #endif
     }
 
-
+    private IEnumerator LoadWithDelay(string sceneName)
+    {
+        yield return new WaitForSecondsRealtime(sceneLoadDelay);
+        SceneManager.LoadScene(sceneName);
+    }
 }
