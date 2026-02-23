@@ -32,7 +32,7 @@ public class MainMenuController : MonoBehaviour
         if (dd == null) return;
 
         dd.ClearOptions();
-        dd.AddOptions(new List<string> { "1", "2", "3" }); // Beispiel
+        dd.AddOptions(new List<string> { "EASY", "MEDIUM", "HARD" }); // Beispiel
         dd.onValueChanged.AddListener(_ => ApplyDropdownsToSettings());
     }
 
