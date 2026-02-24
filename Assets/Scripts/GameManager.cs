@@ -59,7 +59,7 @@ public class GameManager : MonoBehaviour
     public int aiPlayer = 2;                 // in VsAI: welcher Player ist die KI
     [Range(1, 8)] public int aiDepth = 3;    // wird aus GameSettings gesetzt
     public float aiDelaySeconds = 0.35f;     // wird aus GameSettings gesetzt
-    
+
 
     [Header("AI vs AI")]
     public bool aiVsAi = false;              // aus GameSettings.AIVsAI
@@ -761,11 +761,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-
-
-
-
-
     public void DeselectPiece()
     {
         if (selectedPiece != null) selectedPiece.SetSelected(false);
@@ -889,6 +884,7 @@ public class GameManager : MonoBehaviour
             if (aiTurn) StartCoroutine(AIMakeMove());
         }
     }
+
     private IEnumerator VictoryExplosionSequence(int losingPlayer)
     {
         Debug.Log($"🎆 VICTORY EXPLOSION! Spieler {losingPlayer} verliert!");
@@ -993,9 +989,6 @@ public class GameManager : MonoBehaviour
         Destroy(piece.gameObject);
     }
 
-
-
-
     // =============================
     // AI
     // =============================
@@ -1021,13 +1014,16 @@ public class GameManager : MonoBehaviour
             Debug.LogWarning("KI: Kein Zug gefunden.");
     }
 
-
+    // =============================
+    // 🎲 FIXED: Zugrandomisierung verhindert Endlosschleifen
+    // =============================
     private ValidMove GetBestMove(int forPlayer, int depth)
     {
         int opponent = forPlayer == 1 ? 2 : 1;
 
         int bestScore = int.MinValue;
-        ValidMove bestMove = null;
+        // NEU: Liste statt einzelner Move - sammelt alle gleichwertigen besten Züge
+        List<ValidMove> bestMoves = new List<ValidMove>();
 
         List<Piece> myPieces = pieces.Values.Where(p => p != null && p.owner == forPlayer).ToList();
         foreach (Piece p in myPieces)
@@ -1041,13 +1037,31 @@ public class GameManager : MonoBehaviour
 
                 if (score > bestScore)
                 {
+                    // Neuer bester Score gefunden - alte Liste verwerfen
                     bestScore = score;
-                    bestMove = m;
+                    bestMoves.Clear();
+                    bestMoves.Add(m);
+                }
+                else if (score == bestScore)
+                {
+                    // Gleichwertiger Zug - zur Liste hinzufügen
+                    bestMoves.Add(m);
                 }
             }
         }
 
-        return bestMove;
+        // NEU: Zufälligen der besten Züge wählen (verhindert Endlosschleifen)
+        if (bestMoves.Count > 0)
+        {
+            int randomIndex = Random.Range(0, bestMoves.Count);
+            if (bestMoves.Count > 1)
+            {
+                Debug.Log($"🎲 KI hat {bestMoves.Count} gleichwertige Züge gefunden - wählt zufällig Index {randomIndex}");
+            }
+            return bestMoves[randomIndex];
+        }
+
+        return null;
     }
 
     private int Minimax(int playerToMove, int depth, int alpha, int beta, bool maximizing, int aiPerspective)
@@ -1321,13 +1335,11 @@ public class GameManager : MonoBehaviour
         // Animation fertig – erlaube wieder Input
         isAnimating = false;
     }
+
     // ===============================
     // HINT SYSTEM
     // ===============================
 
-    /// <summary>
-    /// Zeigt alle Figuren, die sich bewegen können
-    /// </summary>
     /// <summary>
     /// Zeigt alle Figuren, die sich bewegen können
     /// </summary>
@@ -1399,6 +1411,7 @@ public class GameManager : MonoBehaviour
             }
         }
     }
+
     /// <summary>
     /// Prüft, ob eine Figur noch aktiv/gültig ist
     /// </summary>
@@ -1409,6 +1422,7 @@ public class GameManager : MonoBehaviour
         // Prüfe, ob die Figur in der pieces-Dictionary ist
         return pieces.ContainsKey(piece.id) && pieces[piece.id] == piece;
     }
+
     /// <summary>
     /// Aktualisiert Highlighting basierend auf aktueller Einstellung
     /// </summary>
@@ -1429,7 +1443,7 @@ public class GameManager : MonoBehaviour
             }
         }
     }
-   
+
     /// <summary>
     /// Erzwingt Highlighting-Refresh (für Options-Toggle)
     /// </summary>
@@ -1448,6 +1462,7 @@ public class GameManager : MonoBehaviour
             }
         }
     }
+
     /// <summary>
     /// Speichert Spiel-Statistiken in der Datenbank
     /// Wird bei beiden Siegbedingungen aufgerufen
@@ -1474,6 +1489,7 @@ public class GameManager : MonoBehaviour
             Debug.LogWarning("⚠️ GameStatsAPI nicht gefunden - Statistik nicht gespeichert!");
         }
     }
+
     // ========== STATISTIK HELPER METHODEN ==========
 
     /// <summary>
@@ -1505,5 +1521,3 @@ public class GameManager : MonoBehaviour
         return 0; // Kein AI = 0
     }
 }
-
-
